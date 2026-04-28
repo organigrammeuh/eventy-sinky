@@ -14,9 +14,7 @@ info:
     url: https://sitraka.notion.site/EventSync-3454e032adad807daf62
 
 servers:
-  - url: https://api.eventsync.app/v1
-    description: Production server
-  - url: http://localhost:8080/v1
+  - url: http://localhost:3000/v1
     description: Local development server
 
 components:
@@ -36,17 +34,15 @@ components:
         message:
           type: string
 
-    Event:
+    EventCreation:
       type: object
       required:
         - title
         - startDate
         - endDate
+        - location
+        - description
       properties:
-        id:
-          type: string
-          format: uuid
-          example: "550e8400-e29b-41d4-a716-446655440000"
         title:
           type: string
           example: "Conférence Tech Madagascar 2026"
@@ -61,12 +57,21 @@ components:
         location:
           type: string
           example: "Hôtel Carlton, Antananarivo"
-        sessions:
-          type: array
-          items:
-            $ref: '#/components/schemas/Session'
+        
+    Event:
+      allOf:
+        - $ref: '#/components/schemas/EventCreation'
+        - type: object
+          properties:
+            id: 
+              type: string
+              format: uuid
+            sessions:
+              type: array
+              items:
+                $ref: '#/components/schemas/SessionCreation'
 
-    Session:
+    SessionCreation:
       type: object
       required:
         - title
@@ -74,9 +79,6 @@ components:
         - endTime
         - eventId
       properties:
-        id:
-          type: string
-          format: uuid
         title:
           type: string
         description:
@@ -93,25 +95,32 @@ components:
         capacity:
           type: integer
           description: Informative only (not enforced)
-        eventId:
-          type: string
-          format: uuid
-        speakers:
-          type: array
-          items:
-            $ref: '#/components/schemas/Speaker'
-        isLive:
-          type: boolean
-          description: Computed - true if current time is between startTime and endTime
 
-    Speaker:
+    Session:
+      allOf:
+        - $ref: '#/components/schemas/SessionCreation'
+        - type: object
+          properties:
+            id: 
+              type: string
+              format: uuid
+            eventId:
+              type: string
+              format: uuid
+            speakers:
+              type: array
+              items:
+                $ref: '#/components/schemas/Speaker'
+            question:
+              type: array
+              items:
+                $ref: '#/components/schemas/Question'
+
+    SpeakerCreation:
       type: object
       required:
         - fullName
       properties:
-        id:
-          type: string
-          format: uuid
         fullName:
           type: string
         profilePicture:
@@ -120,32 +129,51 @@ components:
         bio:
           type: string
         socialLinks:
-          type: object
-          additionalProperties:
-            type: string
-            format: uri
-        sessions:
           type: array
           items:
-            $ref: '#/components/schemas/Session'
+            type: string
 
-    Question:
+    Speaker: 
+      allOf:
+        - $ref: '#/components/schemas/SpeakerCreation'
+        - type: object
+          properties:
+            id: 
+              type: string
+              format: uuid
+            sessions:
+              $ref: '#/components/schemas/Session'
+
+    RoomCreation:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: "Salle A"
+
+    Room:
+      allOf:
+        - $ref: '#/components/schemas/RoomCreation'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+
+    QuestionCreation:
       type: object
       required:
         - content
         - sessionId
       properties:
-        id:
-          type: string
-          format: uuid
         content:
           type: string
         name:
           type: string
           description: Optional name (allows anonymity)
-        upvotes:
-          type: integer
-          default: 0
+
         sessionId:
           type: string
           format: uuid
@@ -153,13 +181,17 @@ components:
           type: string
           format: date-time
 
-    FavoriteSession:
-      type: object
-      properties:
-        sessionId:
-          type: string
-          format: uuid
-
+    Question: 
+      allOf:
+        - $ref: '#/components/schemas/QuestionCreation'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            upvotes:
+              type: integer
+              default: 0
 paths:
 
   # ====================== EVENTS ======================
@@ -190,7 +222,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Event'
+              $ref: '#/components/schemas/EventCreation'
       responses:
         '201':
           description: Event created
@@ -237,7 +269,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Event'
+              $ref: '#/components/schemas/EventCreation'
       responses:
         '200':
           description: Event updated
@@ -300,10 +332,50 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Session'
+              $ref: '#/components/schemas/SessionCreation'
       responses:
         '201':
           description: Session created
+
+  /events/{eventId}/sessions/{sessionId}:
+    patch:
+      tags:
+        - Admin - Sessions
+      summary: Update a session
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionCreation'
+      responses:
+        '200':
+          description: Session updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /sessions/{sessionId}:
     get:
@@ -324,6 +396,90 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Session'
+
+  /events/{eventId}/sessions/{sessionId}/speakers/{speakerId}/associate:
+    patch:
+      tags:
+        - Admin - Sessions
+      summary: Associate a speaker to a session
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: speakerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Speaker associated successfully
+        '404':
+          description: Session or speaker not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Speaker already associated to this session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /events/{eventId}/sessions/{sessionId}/speakers/{speakerId}/dissociate:
+    patch:
+      tags:
+        - Admin - Sessions
+      summary: Dissociate a speaker from a session
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: speakerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Speaker dissociated successfully
+        '404':
+          description: Session or speaker not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Speaker not associated to this session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   # ====================== LIVE SESSIONS & QUESTIONS ======================
   /sessions/{sessionId}/questions:
@@ -364,7 +520,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Question'
+              $ref: '#/components/schemas/QuestionCreation'
       responses:
         '201':
           description: Question submitted successfully
@@ -401,6 +557,26 @@ paths:
                 items:
                   $ref: '#/components/schemas/Speaker'
 
+    post:
+      tags:
+        - Admin - Speakers
+      summary: Create a new speaker
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeakerCreation'
+      responses:
+        '201':
+          description: Speaker created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Speaker'
+
   /speakers/{speakerId}:
     get:
       tags:
@@ -421,6 +597,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/Speaker'
 
+    put:
+      tags:
+        - Admin - Speakers
+      summary: Update a speaker
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: speakerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpeakerCreation'
+      responses:
+        '200':
+          description: Speaker updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Speaker'
+        '404':
+          description: Speaker not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Admin - Speakers
+      summary: Delete a speaker
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: speakerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Speaker deleted
+        '404':
+          description: Speaker not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   # ====================== ROOMS ======================
   /rooms:
     get:
@@ -435,28 +667,49 @@ paths:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                      example: "Salle A"
+                  $ref: '#/components/schemas/Room'
 
-  # ====================== FAVORITES (Client-side mainly, but can be synced) ======================
-  /favorites:
+    post:
+      tags:
+        - Admin - Rooms
+      summary: Create a new room
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomCreation'
+      responses:
+        '201':
+          description: Room created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+
+  /rooms/{roomId}/sessions:
     get:
       tags:
-        - Favorites
-      summary: Get user's favorite sessions (if backend sync is implemented later)
+        - Sessions
+      summary: Get sessions for a room
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
       responses:
         '200':
-          description: List of favorite session IDs
+          description: List of sessions in the room
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/FavoriteSession'
-
+                  $ref: '#/components/schemas/Session'
 tags:
   - name: Events
     description: Public event consultation
@@ -472,6 +725,10 @@ tags:
     description: Admin operations on events
   - name: Admin - Sessions
     description: Admin operations on sessions
+  - name: Admin - Speakers
+    description: Admin operations on speakers
+  - name: Admin - Rooms
+    description: Admin operations on rooms
   - name: Favorites
     description: Personal itinerary
 
