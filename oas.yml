@@ -1,0 +1,479 @@
+openapi: 3.1.0
+info:
+  title: EventSync API
+  description: |
+    API for the EventSync platform - Real-time event management and participant engagement.
+    
+    **Roles:**
+    - **Admin (Organizer)**: Full CRUD on events, sessions, speakers (requires authentication)
+    - **Public (Participant)**: Read events, sessions, submit/upvote questions during live sessions, manage personal favorites (local storage)
+    - **Speaker**: Public read-only access to their profile and related sessions/questions
+  version: 1.0.0
+  contact:
+    name: EventSync Team
+    url: https://sitraka.notion.site/EventSync-3454e032adad807daf62
+
+servers:
+  - url: https://api.eventsync.app/v1
+    description: Production server
+  - url: http://localhost:8080/v1
+    description: Local development server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token required for admin (organizer) operations
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+
+    Event:
+      type: object
+      required:
+        - title
+        - startDate
+        - endDate
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        title:
+          type: string
+          example: "Conférence Tech Madagascar 2026"
+        description:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        location:
+          type: string
+          example: "Hôtel Carlton, Antananarivo"
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Session'
+
+    Session:
+      type: object
+      required:
+        - title
+        - startTime
+        - endTime
+        - eventId
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        room:
+          type: string
+          example: "Salle A"
+        capacity:
+          type: integer
+          description: Informative only (not enforced)
+        eventId:
+          type: string
+          format: uuid
+        speakers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Speaker'
+        isLive:
+          type: boolean
+          description: Computed - true if current time is between startTime and endTime
+
+    Speaker:
+      type: object
+      required:
+        - fullName
+      properties:
+        id:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+        profilePicture:
+          type: string
+          format: uri
+        bio:
+          type: string
+        socialLinks:
+          type: object
+          additionalProperties:
+            type: string
+            format: uri
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Session'
+
+    Question:
+      type: object
+      required:
+        - content
+        - sessionId
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        name:
+          type: string
+          description: Optional name (allows anonymity)
+        upvotes:
+          type: integer
+          default: 0
+        sessionId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+
+    FavoriteSession:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+
+paths:
+
+  # ====================== EVENTS ======================
+  /events:
+    get:
+      tags:
+        - Events
+      summary: List all events
+      description: Public endpoint - Get list of all published events
+      responses:
+        '200':
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+
+    post:
+      tags:
+        - Admin - Events
+      summary: Create a new event
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+      responses:
+        '201':
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+
+  /events/{eventId}:
+    get:
+      tags:
+        - Events
+      summary: Get event details
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Event details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+
+    put:
+      tags:
+        - Admin - Events
+      summary: Update an event
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+      responses:
+        '200':
+          description: Event updated
+
+    delete:
+      tags:
+        - Admin - Events
+      summary: Delete an event
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Event deleted
+
+  # ====================== SESSIONS ======================
+  /events/{eventId}/sessions:
+    get:
+      tags:
+        - Sessions
+      summary: Get all sessions for an event (multi-track planning)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Session'
+
+    post:
+      tags:
+        - Admin - Sessions
+      summary: Create a session
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Session'
+      responses:
+        '201':
+          description: Session created
+
+  /sessions/{sessionId}:
+    get:
+      tags:
+        - Sessions
+      summary: Get detailed session information
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session details including speakers and questions section
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+
+  # ====================== LIVE SESSIONS & QUESTIONS ======================
+  /sessions/{sessionId}/questions:
+    get:
+      tags:
+        - Questions
+      summary: Get questions for a session (sorted by upvotes descending)
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Question'
+
+    post:
+      tags:
+        - Questions
+      summary: Submit a new question (only during live session)
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Question'
+      responses:
+        '201':
+          description: Question submitted successfully
+
+  /questions/{questionId}/upvote:
+    post:
+      tags:
+        - Questions
+      summary: Upvote a question
+      parameters:
+        - name: questionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Upvote registered
+
+  # ====================== SPEAKERS ======================
+  /speakers:
+    get:
+      tags:
+        - Speakers
+      summary: List all speakers
+      responses:
+        '200':
+          description: List of speakers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Speaker'
+
+  /speakers/{speakerId}:
+    get:
+      tags:
+        - Speakers
+      summary: Get speaker public profile
+      parameters:
+        - name: speakerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Speaker profile with associated sessions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Speaker'
+
+  # ====================== ROOMS ======================
+  /rooms:
+    get:
+      tags:
+        - Rooms
+      summary: List all rooms
+      responses:
+        '200':
+          description: List of rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: "Salle A"
+
+  # ====================== FAVORITES (Client-side mainly, but can be synced) ======================
+  /favorites:
+    get:
+      tags:
+        - Favorites
+      summary: Get user's favorite sessions (if backend sync is implemented later)
+      responses:
+        '200':
+          description: List of favorite session IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FavoriteSession'
+
+tags:
+  - name: Events
+    description: Public event consultation
+  - name: Sessions
+    description: Session management and planning
+  - name: Questions
+    description: Live Q&A system
+  - name: Speakers
+    description: Speaker profiles
+  - name: Rooms
+    description: Room/venue management
+  - name: Admin - Events
+    description: Admin operations on events
+  - name: Admin - Sessions
+    description: Admin operations on sessions
+  - name: Favorites
+    description: Personal itinerary
+
+security:
+  - BearerAuth: []
