@@ -249,3 +249,30 @@ export async function PATCH(
     )
 
 }
+
+export async function DELETE(
+    req: NextRequest,
+    {params}: {params : {id : string}}
+){
+    const {id} = await params;
+
+    const checkQuery = 'SELECT title FROM event WHERE id = $1';
+    const checkResult = await pool.query(checkQuery, [id]);
+
+    if(checkResult.rowCount == 0){
+        return NextResponse.json({
+            message: `Event with id={${id}} not found.`
+        },{
+            status: 404
+        });
+    }
+
+    const deleteQuery = 'DELETE FROM event WHERE id = $1';
+    await pool.query(deleteQuery, [id]);
+
+    return NextResponse.json({
+        message: 'DELETED'
+    }, {
+        status: 200
+    })
+}
