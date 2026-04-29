@@ -1,5 +1,5 @@
 import { pool } from "@/lib/db";
-import { Event, Session, Speaker } from "@/lib/types";
+import { Event, EventCreation, EventUpdate, Session, Speaker } from "@/lib/types";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -138,5 +138,114 @@ export async function GET(
         }
     
     
+
+}
+
+export async function PATCH(
+    req: NextRequest,
+    { params }: { params: { id: string } }
+){
+    const { id } = await params;
+    const udpatedData : EventUpdate = await req.json();
+
+    if(!udpatedData){
+        return NextResponse.json({
+            message : 'Please provide at least one field to update'
+        }, {
+            status: 400
+        })
+    }
+
+    const findEventQuery = `
+        SELECT title FROM event WHERE id = $1
+    `;
+
+    const findEventResult = await pool.query(findEventQuery, [id]);
+
+    if(findEventResult.rowCount == 0){
+        return NextResponse.json({
+            message: `Event with id={${id}} not found`
+        });
+    }
+
+    let updateQuery = `
+        UPDATE event
+        SET
+    `;
+
+    let updateParams : any[] = [];
+
+    if(udpatedData.description){
+        updateQuery += ' description = $1';
+        updateParams.push(udpatedData.description);
+    }
+
+    if(udpatedData.endDate){
+        if(updateParams.length != 0){
+            updateQuery += ','
+        }
+        updateParams.push(udpatedData.endDate);
+        updateQuery += ` end_date = $${updateParams.length}`;
+    }
+
+    if(udpatedData.startDate){
+        if(updateParams.length != 0){
+            updateQuery += ','
+        }
+        updateParams.push(udpatedData.startDate);
+        updateQuery += ` start_date = $${updateParams.length}`;
+    }
+
+    if(udpatedData.location){
+        if(updateParams.length != 0){
+            updateQuery += ','
+        }
+        updateParams.push(udpatedData.location);
+        updateQuery += ` place = $${updateParams.length}`;
+    }
+
+    if(udpatedData.title){
+        if(updateParams.length != 0){
+            updateQuery += ','
+        }
+        updateParams.push(udpatedData.title);
+        updateQuery += ` title = $${updateParams.length}`;
+    };
+
+    updateParams.push(id);
+    updateQuery += ` WHERE id = $${updateParams.length}`;
+
+    console.log(updateQuery);
+    console
+
+    await pool.query(
+        updateQuery, updateParams
+    );
+
+    const fetchUpdatedEventQuery = `
+        SELECT
+            id, title, description, start_date, end_date, place
+        FROM event
+        WHERE id = $1
+    `;
+
+    const fetchUpdatedEventResult = await pool.query(fetchUpdatedEventQuery , [id]);
+
+    const row = fetchUpdatedEventResult.rows[0];
+
+    const updatedEvent : Event = {
+        id: row.id,
+        description: row.description,
+        endDate: row.end_date,
+        location: row.place,
+        startDate: row.start_date,
+        title: row.title
+    };
+
+    return NextResponse.json(
+        updatedEvent , {
+            status: 200
+        }
+    )
 
 }
