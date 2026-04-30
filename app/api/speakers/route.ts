@@ -43,7 +43,7 @@ export async function GET() {
             const sessions: Session[] = [];
 
             for (const session of findSessionResult.rows) {
-                session.push(
+                sessions.push(
                     {
                         id: session.id,
                         capacity: session.capacity,
