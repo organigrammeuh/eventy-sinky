@@ -33,7 +33,6 @@ export async function GET() {
 
     try {
         const findSpeakerResult = await pool.query(findSpeakerQuery);
-        const speakers: Speaker[] = [];
 
         for (const row of findSpeakerResult.rows) {
 
