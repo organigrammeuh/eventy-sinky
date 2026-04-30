@@ -44,3 +44,11 @@ export interface Speaker extends SpeakerCreation {
     id : string,
     sessions?: Session[]
 }
+
+export interface RoomCreation {
+    name : string
+};
+
+export interface Room extends RoomCreation {
+    id : string
+}
