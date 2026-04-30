@@ -52,3 +52,7 @@ export interface RoomCreation {
 export interface Room extends RoomCreation {
     id : string
 }
+
+export interface RoomSessions extends Room {
+    sessions : Session[]
+}
