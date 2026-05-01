@@ -1,6 +1,7 @@
 import { pool } from "@/lib/db";
-import { Session, Speaker } from "@/lib/types";
-import { NextResponse } from "next/server";
+import { Session, Speaker, SpeakerCreation } from "@/lib/types";
+import { console } from "inspector";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
 
@@ -78,6 +79,69 @@ export async function GET() {
     } catch (error) {
         return NextResponse.json(
             { error: "Error when fetching all the speakers" },
+            { status: 500 }
+        );
+    }
+}
+
+export async function POST(
+    req : NextRequest
+) {
+    const toSave : SpeakerCreation = await req.json();
+    if (!toSave.fullName) {
+        return NextResponse.json(
+            { message: "fullName est obligatoire" },
+            { status: 400 }
+        );
+    }
+
+    const postSpeakerQuery = `
+        INSERT INTO speaker (full_name, profile_picture_url, biography)
+        VALUES ($1, $2, $3)
+        RETURNING id
+    `;
+
+    const postLinkQuery = `
+        INSERT INTO link (url, id_speaker)
+        VALUES ($1, $2)
+    `;
+
+    try {
+
+        const speakerResult = await pool.query(postSpeakerQuery, [
+            toSave.fullName,
+            toSave.profilePicture ?? null,  
+            toSave.bio ?? null              
+        ]);
+
+        const speakerId = speakerResult.rows[0].id;
+
+        if (toSave.links && toSave.links.length > 0) {
+            for (const url of toSave.links) {
+                const saveLinkResult = await pool.query(postLinkQuery, [
+                    url,
+                    speakerId
+                ]);
+
+                console.log(saveLinkResult)
+            }
+        }
+
+        const speaker: Speaker = {
+            id: speakerId,
+            fullName: toSave.fullName,
+            profilePicture: toSave.profilePicture ?? null,
+            bio: toSave.bio ?? null,
+            links: toSave.links ?? [],
+            sessions: []
+        };
+
+        return NextResponse.json(speaker, { status: 201 });
+
+    } catch (error) {
+        console.error("ERREUR POST /speakers", error);
+        return NextResponse.json(
+            { error: "Erreur serveur", message: String(error) },
             { status: 500 }
         );
     }
