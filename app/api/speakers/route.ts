@@ -71,7 +71,7 @@ export async function GET() {
                 fullName: row.full_name,
                 profilePicture: row.profile_picture_url,
                 bio: row.biography,
-                links: links,
+                socialLinks: links,
                 sessions: sessions
             });
         }
@@ -116,8 +116,8 @@ export async function POST(
 
         const speakerId = speakerResult.rows[0].id;
 
-        if (toSave.links && toSave.links.length > 0) {
-            for (const url of toSave.links) {
+        if (toSave.socialLinks && toSave.socialLinks.length > 0) {
+            for (const url of toSave.socialLinks) {
                 const saveLinkResult = await pool.query(postLinkQuery, [
                     url,
                     speakerId
@@ -132,7 +132,7 @@ export async function POST(
             fullName: toSave.fullName,
             profilePicture: toSave.profilePicture ?? null,
             bio: toSave.bio ?? null,
-            links: toSave.links ?? [],
+            socialLinks: toSave.socialLinks ?? [],
             sessions: []
         };
 
