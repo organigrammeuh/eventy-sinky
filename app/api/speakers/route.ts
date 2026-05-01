@@ -69,7 +69,7 @@ export async function GET() {
                 id: row.id,
                 fullName: row.full_name,
                 profilePicture: row.profile_picture_url,
-                bio: row.profile_picture_url,
+                bio: row.biography,
                 links: links,
                 sessions: sessions
             });
