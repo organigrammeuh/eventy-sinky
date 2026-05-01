@@ -150,3 +150,48 @@ export async function PUT(
         );
     }
 }
+
+export async function DELETE(
+    req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const { id } = await params;
+
+    try {
+        const check = await getSpeakerById(id);
+
+        if (!check) {
+            return NextResponse.json(
+                { error: "Speaker not found" },
+                { status: 404 }
+            );
+        }
+
+
+        await pool.query(
+            `DELETE FROM session_speaker WHERE id_speaker = $1`,
+            [id]
+        );
+
+        await pool.query(
+            `DELETE FROM link WHERE id_speaker = $1`,
+            [id]
+        );
+
+        await pool.query(
+            `DELETE FROM speaker WHERE id = $1`,
+            [id]
+        );
+
+        return new NextResponse(null, { status: 204 });
+
+    } catch (error) {
+
+        console.error("ERREUR DELETE /speakers/:id", error);
+
+        return NextResponse.json(
+            { error: "Erreur serveur", message: String(error) },
+            { status: 500 }
+        );
+    }
+}
