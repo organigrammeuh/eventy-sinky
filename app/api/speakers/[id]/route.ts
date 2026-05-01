@@ -83,7 +83,7 @@ export async function GET(
             fullName: result.full_name,
             profilePicture: result.profile_picture_url,
             bio: result.biography,
-            links: links,
+            socialLinks: links,
             sessions: sessions
         };
         return NextResponse.json(speaker, { status: 200 })
