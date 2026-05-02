@@ -27,3 +27,15 @@ export async function createQuestionBySession(
 
   return result.rows[0]
 }
+
+// query to upvote question
+export async function upvoteQuestion(
+  questionId: string
+): Promise<Question | null> {
+  const upvotedResult = await pool.query<Question>(
+    `update question set upvote = upvote + 1 where id = $1
+returning id, content, name, id_session as "sessionId", creation_datetime as "createdAt", upvotes`,
+    [questionId]
+  )
+  return upvotedResult.rows[0] ?? null
+}
