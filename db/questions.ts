@@ -1,6 +1,7 @@
 import { pool } from "@/lib/db";
 import { GetQuestion, Question, QuestionCreation } from "@/types/question";
 
+// query to get all questions using sessionId
 export async function getQuestionsBySession(
   sessionId: string
 ): Promise<GetQuestion[]> {
@@ -13,11 +14,12 @@ export async function getQuestionsBySession(
   return result.rows
 }
 
+// query to create question by sessionId
 export async function createQuestionBySession(
   question: QuestionCreation
 ): Promise<Question> {
   const result = await pool.query<Question>(
-    `insert into question (content, name, id_session, creation_datetime
+    `insert into question (content, name, id_session, creation_datetime)
     values ($1, $2, $3, $4)
     returning id, content, name, id_session as "sessionId", creation_datetime as "createdAt", upvotes`,
     [question.content, question.name ?? null, question.sessionId, question.createdAt ?? new Date().toISOString()]
