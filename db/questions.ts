@@ -33,7 +33,7 @@ export async function upvoteQuestion(
   questionId: string
 ): Promise<Question | null> {
   const upvotedResult = await pool.query<Question>(
-    `update question set upvote = upvote + 1 where id = $1
+    `update question set upvotes = upvotes + 1 where id = $1
 returning id, content, name, id_session as "sessionId", creation_datetime as "createdAt", upvotes`,
     [questionId]
   )
