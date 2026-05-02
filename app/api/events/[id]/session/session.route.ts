@@ -3,9 +3,9 @@ import { pool } from "@/lib/db";
 
 export async function GET(
     req: Request,
-    { params }: { params: { eventId: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    const { eventId } = params;
+    const { id } = await params;
 
     const result = await pool.query(
         `SELECT s.id,
@@ -21,7 +21,7 @@ export async function GET(
      JOIN room r ON r.id = s.id_room
      WHERE s.id_event = $1
      ORDER BY s.start_date ASC`,
-        [eventId]
+        [id]
     );
 
     return NextResponse.json(result.rows);
