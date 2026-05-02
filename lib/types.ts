@@ -37,7 +37,7 @@ export interface SpeakerCreation {
     fullName : string,
     profilePicture: string,
     bio : string,
-    links ?: string[]
+    socialLinks ?: string[]
 };
 
 export interface Speaker extends SpeakerCreation {

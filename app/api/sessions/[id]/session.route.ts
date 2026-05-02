@@ -3,9 +3,9 @@ import { pool } from "@/lib/db";
 
 export async function GET(
     req: Request,
-    { params }: { params: { sessionId: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    const { sessionId } = params;
+    const { id } = await params;
 
     const sessionRes = await pool.query(
         `SELECT
@@ -21,7 +21,7 @@ export async function GET(
          FROM session s
                   JOIN room r ON r.id = s.id_room
          WHERE s.id = $1`,
-        [sessionId]
+        [id]
     );
 
     if (sessionRes.rowCount === 0) {
@@ -37,7 +37,7 @@ export async function GET(
          FROM speaker sp
                   JOIN session_speaker ss ON ss.id_speaker = sp.id
          WHERE ss.id_session = $1`,
-        [sessionId]
+        [id]
     );
 
     const questionsRes = await pool.query(
@@ -51,7 +51,7 @@ export async function GET(
          FROM question q
          WHERE q.id_session = $1
          ORDER BY q.upvotes DESC`,
-        [sessionId]
+        [id]
     );
 
     const session = sessionRes.rows[0];

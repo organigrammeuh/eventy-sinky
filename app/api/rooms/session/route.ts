@@ -3,9 +3,9 @@ import { pool } from "@/lib/db";
 
 export async function GET(
     req: Request,
-    { params }: { params: { roomId: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
-    const { roomId } = params;
+    const { id } = await params;
 
     const result = await pool.query(
         `SELECT
@@ -20,7 +20,7 @@ export async function GET(
          FROM session s
          WHERE s.id_room = $1
          ORDER BY s.start_date ASC`,
-        [roomId]
+        [id]
     );
 
     const now = new Date();
