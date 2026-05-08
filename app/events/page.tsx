@@ -10,7 +10,7 @@ const fetchAllEvents = async (): Promise<Event[]> => {
     return rawEvents;
 };
 
-const refractorDate = (e : Event) => {
+export const refractorDate = (e : Event) => {
 
     const months : string[] = [
         'January', 'February', 'March', 'April', 'May', 'June',
