@@ -4,9 +4,9 @@ import {Session, SessionCreation} from "@/lib/types";
 
 export async function GET(
     req: Request,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ eventId: string }> }
 ) {
-    const { id } = await params;
+    const { eventId } = await params;
 
     const result = await pool.query(
         `SELECT s.id,
@@ -22,7 +22,7 @@ export async function GET(
      JOIN room r ON r.id = s.id_room
      WHERE s.id_event = $1
      ORDER BY s.start_date ASC`,
-        [id]
+        [eventId]
     );
 
     return NextResponse.json(result.rows);

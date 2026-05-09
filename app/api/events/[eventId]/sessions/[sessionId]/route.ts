@@ -71,7 +71,7 @@ export async function PATCH(
             startTime: updated.start_date,
             endTime: updated.end_date,
             capacity: updated.capacity,
-            room: toUpdate.room,
+            room: toUpdate.room!,
         };
 
         return NextResponse.json(session, { status: 200 });
