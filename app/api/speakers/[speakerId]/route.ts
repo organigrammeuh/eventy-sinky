@@ -53,9 +53,9 @@ async function getSpeakerById(id: string): Promise<Speaker | null> {
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ speakerId: string }> }
 ) {
-    const { id } = await params
+    const { speakerId: id } = await params
 
     try {
         const speaker = await getSpeakerById(id);
@@ -80,9 +80,9 @@ export async function GET(
 
 export async function PUT(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ speakerId: string }> }
 ) {
-    const { id } = await params;
+    const { speakerId: id } = await params;
     const toUpdate: SpeakerCreation = await req.json();
 
     const checkSpeakerQuery = `
@@ -153,9 +153,9 @@ export async function PUT(
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ speakerId: string }> }
 ) {
-    const { id } = await params;
+    const { speakerId: id } = await params;
 
     try {
         const check = await getSpeakerById(id);
