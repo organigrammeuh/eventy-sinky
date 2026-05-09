@@ -110,7 +110,7 @@ export async function GET(
                         links.push(linkRow.url);
                     }
 
-                    thisSpeaker.links = links;
+                    thisSpeaker.socialLinks = links;
                     
                     speakers.push(thisSpeaker);
 

@@ -1,14 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 
 export async function GET(
-    req: Request,
-    { params }: { params: { sessionId: string } }
+  _req: NextRequest,
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
-    const { sessionId } = params;
+  const { sessionId } = await params;
 
-    const sessionRes = await pool.query(
-        `SELECT
+  const sessionRes = await pool.query(
+    `SELECT
              s.id,
              s.title,
              s.description,
@@ -21,15 +21,15 @@ export async function GET(
          FROM session s
                   JOIN room r ON r.id = s.id_room
          WHERE s.id = $1`,
-        [sessionId]
-    );
+    [sessionId]
+  );
 
-    if (sessionRes.rowCount === 0) {
-        return NextResponse.json({ error: "Session not found" }, { status: 404 });
-    }
+  if (sessionRes.rowCount === 0) {
+    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  }
 
-    const speakersRes = await pool.query(
-        `SELECT
+  const speakersRes = await pool.query(
+    `SELECT
              sp.id,
              sp.full_name,
              sp.profile_picture_url,
@@ -37,11 +37,11 @@ export async function GET(
          FROM speaker sp
                   JOIN session_speaker ss ON ss.id_speaker = sp.id
          WHERE ss.id_session = $1`,
-        [sessionId]
-    );
+    [sessionId]
+  );
 
-    const questionsRes = await pool.query(
-        `SELECT
+  const questionsRes = await pool.query(
+    `SELECT
              q.id,
              q.content,
              q.name,
@@ -51,16 +51,16 @@ export async function GET(
          FROM question q
          WHERE q.id_session = $1
          ORDER BY q.upvotes DESC`,
-        [sessionId]
-    );
+    [sessionId]
+  );
 
-    const session = sessionRes.rows[0];
-    const now = new Date();
+  const session = sessionRes.rows[0];
+  const now = new Date();
 
-    return NextResponse.json({
-        ...session,
-        isLive: now >= new Date(session.start_date) && now <= new Date(session.end_date),
-        speakers: speakersRes.rows,
-        questions: questionsRes.rows,
-    });
+  return NextResponse.json({
+    ...session,
+    isLive: now >= new Date(session.start_date) && now <= new Date(session.end_date),
+    speakers: speakersRes.rows,
+    questions: questionsRes.rows,
+  });
 }
