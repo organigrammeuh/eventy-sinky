@@ -46,7 +46,7 @@ export default function Navbar() {
                     {["Home", "Events", "Speakers", "Sessions", "Rooms"].map((item) => (
                         <Link
                             key={item}
-                            href={`/${item.toLowerCase()}`}
+                            href= {`/${item.toLowerCase()}`}
                             style={{
                                 fontSize: "16px",
                                 fontWeight: 400,
