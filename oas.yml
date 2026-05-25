@@ -133,6 +133,80 @@ components:
           items:
             type: string
 
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - fullName
+      properties:
+        fullName:
+          type: string
+          example: "Rakoto Andriantsoa"
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    RefreshRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: Short-lived JWT (e.g. 15 min)
+        refreshToken:
+          type: string
+          description: Long-lived token for renewal (e.g. 7 days)
+        organizer:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        fullName:
+          type: string
+          example: "Rakoto Andriantsoa"
+        avatarUrl:
+          type: string
+          format: uri
+          description: Profile picture (auto-filled from Google/GitHub on OAuth)
+        authProvider:
+          type: string
+          enum: [local, google, github]
+        createdAt:
+          type: string
+          format: date-time
+
     Speaker: 
       allOf:
         - $ref: '#/components/schemas/SpeakerCreation'
@@ -710,6 +784,168 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Session'
+                  
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new organizer account
+      description: Creates an organizer account. Returns 409 if email already exists.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '409':
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Log in as organizer
+      description: Returns a short-lived access token and a longer-lived refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Log out (invalidate current token)
+      security:
+        - BearerAuth: []
+      responses:
+        '204':
+          description: Logged out successfully
+        '401':
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh access token
+      description: Exchange a valid refresh token for a new access token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Refresh token invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /auth/{provider}/redirect:
+    get:
+      tags:
+        - Auth
+      summary: Initiate OAuth login (Google or GitHub)
+      description: >
+        Redirects the browser to the provider's authorization page.
+        `provider` must be `google` or `github`.
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, github]
+      responses:
+        '302':
+          description: Redirect to provider authorization URL
+        '400':
+          description: Unknown provider
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/{provider}/callback:
+    get:
+      tags:
+        - Auth
+      summary: OAuth callback — exchange code for EventSync JWT
+      description: >
+        Called by the provider after user consent.
+        The backend exchanges the `code` for a provider token,
+        fetches the user profile, upserts the organizer account,
+        and returns EventSync JWT tokens.
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, github]
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          description: CSRF protection state parameter
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: OAuth code invalid or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 tags:
   - name: Events
     description: Public event consultation
