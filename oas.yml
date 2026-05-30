@@ -291,6 +291,36 @@ paths:
           description: Event deleted
 
   # ====================== SESSIONS ======================
+  /sessions:
+    get:
+      tags:
+        - Sessions
+      summary: Get all sessions
+      description: Public endpoint - Returns all sessions across all events
+      parameters:
+        - name: eventId
+          in: query
+          required: false
+          description: Filter sessions by event
+          schema:
+            type: string
+            format: uuid
+        - name: speakerId
+          in: query
+          required: false
+          description: Filter sessions by speaker
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of all sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Session"
   /events/{eventId}/sessions:
     get:
       tags:
