@@ -110,7 +110,7 @@ export async function GET(){
                 description: row.description,
                 endDate: row.end_date,
                 startDate: row.start_date,
-                location: row.location,
+                location: row.place,
                 title: row.title
             };
             
