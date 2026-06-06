@@ -4,9 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
     req : NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: { eventId: string } }
 ){
-    const { id } = await params;
+    const { eventId } = await params;
     
         const findEventQuery = `
             SELECT 
@@ -45,12 +45,12 @@ export async function GET(
     
         try{
         
-            const findEventResult = await pool.query(findEventQuery, [id]);
+            const findEventResult = await pool.query(findEventQuery, [eventId]);
 
 
             if(findEventResult.rowCount == 0){
                 return NextResponse.json({
-                    message: `Event with id={${id}} not found`
+                    message: `Event with id={${eventId}} not found`
                 }, {
                     status : 404
                 })
@@ -64,7 +64,7 @@ export async function GET(
                 description: row.description,
                 endDate: row.end_date,
                 startDate: row.start_date,
-                location: row.location,
+                location: row.place,
                 title: row.title
             };
             
@@ -143,9 +143,9 @@ export async function GET(
 
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: { eventId: string } }
 ){
-    const { id } = await params;
+    const { eventId } = await params;
     const udpatedData : EventUpdate = await req.json();
 
     if(!udpatedData){
@@ -160,11 +160,11 @@ export async function PATCH(
         SELECT title FROM event WHERE id = $1
     `;
 
-    const findEventResult = await pool.query(findEventQuery, [id]);
+    const findEventResult = await pool.query(findEventQuery, [eventId]);
 
     if(findEventResult.rowCount == 0){
         return NextResponse.json({
-            message: `Event with id={${id}} not found`
+            message: `Event with id={${eventId}} not found`
         });
     }
 
@@ -212,7 +212,7 @@ export async function PATCH(
         updateQuery += ` title = $${updateParams.length}`;
     };
 
-    updateParams.push(id);
+    updateParams.push(eventId);
     updateQuery += ` WHERE id = $${updateParams.length}`;
 
     console.log(updateQuery);
@@ -229,7 +229,7 @@ export async function PATCH(
         WHERE id = $1
     `;
 
-    const fetchUpdatedEventResult = await pool.query(fetchUpdatedEventQuery , [id]);
+    const fetchUpdatedEventResult = await pool.query(fetchUpdatedEventQuery , [eventId]);
 
     const row = fetchUpdatedEventResult.rows[0];
 

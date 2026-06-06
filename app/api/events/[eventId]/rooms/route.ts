@@ -4,9 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
     req: NextRequest ,
-    {params} : {params : {id : string}}
+    {params} : {params : {eventId : string}}
 ) {
-    const { id } = await params;
+    const { eventId } = await params;
         
     const findEventQuery = `
         SELECT 
@@ -47,12 +47,12 @@ export async function GET(
     
     try{
     
-        const findEventResult = await pool.query(findEventQuery, [id]);
+        const findEventResult = await pool.query(findEventQuery, [eventId]);
 
 
         if(findEventResult.rowCount == 0){
             return NextResponse.json({
-                message: `Event with id={${id}} not found`
+                message: `Event with id={${eventId}} not found`
             }, {
                 status : 404
             })
