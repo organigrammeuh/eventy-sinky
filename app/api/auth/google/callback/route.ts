@@ -1,4 +1,4 @@
-import { pool } from "@/lib/db";
+import { upsertOAuthUser, findUserByEmail } from "@/db/auth";
 import { generateAccessToken, generateRefreshToken } from "@/lib/jwt";
 import { GoogleTokenResponse, GoogleUserProfile } from "@/types/auth";
 import { NextResponse } from "next/server";
@@ -125,36 +125,26 @@ export async function GET(request: Request) {
     const profile = (await profileResponse.json()) as GoogleUserProfile;
     console.log("Google profile:", JSON.stringify(profile, null, 2));
 
-    // Upsert
-    const upsertUser = await pool.query(
-      ` INSERT INTO "user"
-        (full_name, email, password, role, auth_provider, avatar_url)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        ON CONFLICT (email) DO UPDATE
-        SET
-        full_name     = EXCLUDED.full_name,
-        auth_provider = EXCLUDED.auth_provider,
-        avatar_url    = EXCLUDED.avatar_url
-        RETURNING
-        id,
-        full_name,
-        email,
-        role,
-        auth_provider,
-        avatar_url,
-        created_at
-      `,
-      [
-        profile.name,
-        profile.email,
-        null,
-        "attendee",
-        "google",
-        profile.picture ?? null,
-      ],
-    );
+    // Verify existing user account
+    const existingUser = await findUserByEmail(profile.email);
+    if (existingUser && existingUser.auth_provider !== "google") {
+      return NextResponse.json(
+        {
+          error: "ACCOUNT_EXISTS",
+          message:
+            "An account with this email already exists with a different sign-in method.",
+          authProvider: existingUser.auth_provider,
+        },
+        { status: 409 },
+      );
+    }
 
-    const user = upsertUser.rows[0];
+    const user = await upsertOAuthUser({
+      fullName: profile.name,
+      email: profile.email,
+      authProvider: "google",
+      avatarUrl: profile.picture ?? null,
+    });
 
     // Generate tokens
     const accessToken = generateAccessToken({

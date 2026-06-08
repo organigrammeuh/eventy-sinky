@@ -1,4 +1,4 @@
-import { pool } from "@/lib/db";
+import { upsertOAuthUser, findUserByEmail } from "@/db/auth";
 import { generateAccessToken, generateRefreshToken } from "@/lib/jwt";
 import {
   GithubEmailRecord,
@@ -120,29 +120,25 @@ export async function GET(request: Request) {
 
     const fullName = profile.name || profile.login;
 
-    const upsertUser = await pool.query(
-      `
-      INSERT INTO "user"
-        (full_name, email, password, role, auth_provider, avatar_url)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      ON CONFLICT (email) DO UPDATE
-      SET
-        full_name = EXCLUDED.full_name,
-        auth_provider = EXCLUDED.auth_provider,
-        avatar_url = EXCLUDED.avatar_url
-      RETURNING
-        id,
-        full_name,
-        email,
-        role,
-        auth_provider,
-        avatar_url,
-        created_at
-      `,
-      [fullName, email, null, "attendee", "github", profile.avatar_url ?? null],
-    );
+    const existingUser = await findUserByEmail(email);
+    if (existingUser && existingUser.auth_provider !== "github") {
+      return NextResponse.json(
+        {
+          error: "ACCOUNT_EXISTS",
+          message:
+            "An account with this email already exists with a different sign-in method.",
+          authProvider: existingUser.auth_provider,
+        },
+        { status: 409 },
+      );
+    }
 
-    const user = upsertUser.rows[0];
+    const user = await upsertOAuthUser({
+      fullName,
+      email,
+      authProvider: "github",
+      avatarUrl: profile.avatar_url ?? null,
+    });
 
     const accessToken = generateAccessToken({
       userId: user.id,
