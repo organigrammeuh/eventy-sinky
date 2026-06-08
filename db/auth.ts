@@ -8,6 +8,19 @@ export interface OAuthUserRecord {
   auth_provider: AuthProvider;
 }
 
+// get user by email
+export async function getUserByEmail(email: String) {
+  const result = await pool.query(
+    `
+    SELECT id, full_name, email, password, role, auth_provider, avatar_url, created_at
+    FROM "user"
+    WHERE email = $1
+    `,
+    [email],
+  );
+  return result.rows[0] ?? null;
+}
+
 // find user by email
 export async function findUserByEmail(
   email: string,
