@@ -32,3 +32,17 @@ export interface GithubEmailRecord {
   verified: boolean;
   visibility: string | null;
 }
+
+// interface for google auth
+export interface GoogleTokenResponse {
+  access_token?: string;
+  error?: string;
+  error_description?: string;
+}
+
+export interface GoogleUserProfile {
+  email: string;
+  name: string;
+  picture?: string;
+  email_verified: boolean;
+}
