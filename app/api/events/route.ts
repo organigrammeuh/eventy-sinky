@@ -4,11 +4,12 @@ import { Event, EventCreation } from "@/types/events";
 import { Session } from "@/types/sessions";
 import { Speaker } from "@/types/speakers";
 import { createEvent } from "@/db/events";
+import { findSessionSpeaker } from "@/db/speakers";
 
 export async function POST (
     req : NextRequest
 ) {   
-    
+
     const toSave : EventCreation  = await req.json();
 
     if(!toSave.startDate || !toSave.title || !toSave.endDate || !toSave.description){
@@ -111,37 +112,7 @@ export async function GET(){
                      title: session.title
                 };
 
-                const findSpeakerResult = await pool.query(
-                    findSpeakerQuery , [session.id]
-                );
-                
-                const speakers : Speaker[] = [];
-
-                for(const speaker of findSpeakerResult.rows){
-                    
-                    let thisSpeaker : Speaker = {
-                        id: speaker.id,
-                        bio: speaker.biography,
-                        fullName: speaker.full_name,
-                        profilePicture: speaker.profile_picture_url
-                    };
-
-                    let links : string[] = [];
-
-                    const getSpeakerLinkResult = await pool.query(
-                        findSpeakerLinksQuery , [speaker.id]
-                    );
-
-                    for(const linkRow of getSpeakerLinkResult.rows){
-                        links.push(linkRow.url);
-                    }
-
-                    thisSpeaker.socialLinks = links;
-                    
-                    speakers.push(thisSpeaker);
-
-                }
-                fetchedSession.speakers = speakers;
+                fetchedSession.speakers = await findSessionSpeaker(session.id);
 
                 eventSessions.push(fetchedSession)
             }
