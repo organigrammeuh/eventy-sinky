@@ -3,7 +3,7 @@ import { pool } from "@/lib/db";
 import { Event, EventCreation } from "@/types/events";
 import { Session } from "@/types/sessions";
 import { Speaker } from "@/types/speakers";
-import { createEvent } from "@/db/events";
+import { createEvent, findAllEvent } from "@/db/events";
 import { findSessionSpeaker } from "@/db/speakers";
 
 export async function POST (
@@ -43,86 +43,13 @@ export async function POST (
 
 export async function GET(){
     
-    let events : Event[] = [];
-
-    const findEventQuery = `
-        SELECT 
-            id, title, description, start_date, end_date, place
-        FROM event;
-        `;
-    
-    const findSessionQuery = `
-        SELECT
-            s.id, s.title, s.description,
-            s.start_date, s.end_date, s.capacity,
-            r.name
-        FROM session s
-        JOIN room r on s.id_room = r.id
-        WHERE
-            id_event = $1
-
-    `;
-
-    const findSpeakerQuery = `
-        SELECT
-            id, full_name, profile_picture_url, biography
-        FROM speaker s
-        JOIN session_speaker ss
-            ON ss.id_speaker = s.id
-        WHERE ss.id_session = $1
-    `;
-
-    const findSpeakerLinksQuery = `
-        SELECT 
-            url
-        FROM link
-        WHERE id_speaker = $1
-    `;
-
     try{
-    
-        const findEventResult = await pool.query(findEventQuery);
-    
-    
-        for(const row of findEventResult.rows){
+        const events : Event[] = await findAllEvent();
 
-            let event : Event = {
-                id: row.id,
-                description: row.description,
-                endDate: row.end_date,
-                startDate: row.start_date,
-                location: row.place,
-                title: row.title
-            };
-            
-            let eventSessions : Session[] = [];
-
-            const findSessionResult = await pool.query(
-                findSessionQuery, [event.id]
-            );
-
-            for(const session of findSessionResult.rows){
-                let fetchedSession : Session = {
-                     id: session.id,
-                     capacity: session.capacity,
-                     description: session.description,
-                     endTime: session.end_date,
-                     room: session.name,
-                     startTime: session.start_date,
-                     title: session.title
-                };
-
-                fetchedSession.speakers = await findSessionSpeaker(session.id);
-
-                eventSessions.push(fetchedSession)
-            }
-
-            event.sessions = eventSessions;
-
-            events.push(event);
-
-        }
-
+        return NextResponse.json(
+            events , {status: 200}
+        );
+        
     } catch (err : any){
         return NextResponse.json(
             {
@@ -133,11 +60,5 @@ export async function GET(){
             }
         )
     }
-
-
-    return NextResponse.json(
-        events,
-        {status : 200}
-    );
 
 }
