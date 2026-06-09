@@ -3,10 +3,12 @@ import { pool } from "@/lib/db";
 import { Event, EventCreation } from "@/types/events";
 import { Session } from "@/types/sessions";
 import { Speaker } from "@/types/speakers";
+import { createEvent } from "@/db/events";
 
 export async function POST (
     req : NextRequest
 ) {   
+    
     const toSave : EventCreation  = await req.json();
 
     if(!toSave.startDate || !toSave.title || !toSave.endDate || !toSave.description){
@@ -17,33 +19,8 @@ export async function POST (
     }
 
     try{
-        const query = `
-            INSERT INTO event
-            (title, description, start_date, end_date, place)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING id
-        `;
-    
-        const queryResult = await pool.query(
-            query, [
-                toSave.title,
-                toSave.description,
-                toSave.startDate,
-                toSave.endDate,
-                toSave.location
-            ]
-        );
-    
-        const createdEventId : string = queryResult.rows[0].id;
-
-        const event : Event = {
-            description: toSave.description,
-            endDate: toSave.endDate,
-            startDate: toSave.startDate,
-            id: createdEventId,
-            location: toSave.location,
-            title: toSave.title
-        };
+        
+        const event = await createEvent(toSave);
 
         return NextResponse.json(
             event, 
@@ -51,7 +28,7 @@ export async function POST (
         );
 
     } catch (err :any) {
-        console.error(err);
+
         return NextResponse.json(
             {
                 message : 'Error when creating the event',
@@ -59,6 +36,7 @@ export async function POST (
             },
             {status : 500}
         );
+
     }
 }
 
