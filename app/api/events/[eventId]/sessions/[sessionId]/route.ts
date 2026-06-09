@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-import { SessionCreation, Session } from "@/lib/types";
+import { SessionCreation, Session } from "@/types/sessions";
 
 export async function PATCH(
     req: NextRequest,
@@ -71,7 +71,7 @@ export async function PATCH(
             startTime: updated.start_date,
             endTime: updated.end_date,
             capacity: updated.capacity,
-            room: toUpdate.room,
+            room: updated.room,
         };
 
         return NextResponse.json(session, { status: 200 });

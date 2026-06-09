@@ -1,6 +1,8 @@
-import { EventCreation, Event, Session, Speaker } from "@/lib/types";
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
+import { Event, EventCreation } from "@/types/events";
+import { Session } from "@/types/sessions";
+import { Speaker } from "@/types/speakers";
 
 export async function POST (
     req : NextRequest
@@ -135,7 +137,7 @@ export async function GET(){
                     findSpeakerQuery , [session.id]
                 );
                 
-                const speakers : Speaker [] = [];
+                const speakers : Speaker[] = [];
 
                 for(const speaker of findSpeakerResult.rows){
                     

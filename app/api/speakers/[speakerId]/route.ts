@@ -1,5 +1,5 @@
 import { pool } from "@/lib/db";
-import { Session, Speaker, SpeakerCreation } from "@/lib/types";
+import { Speaker, SpeakerCreation } from "@/types/speakers";
 import { NextRequest, NextResponse } from "next/server";
 
 

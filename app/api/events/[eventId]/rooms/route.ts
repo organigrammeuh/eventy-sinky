@@ -1,5 +1,8 @@
 import { pool } from "@/lib/db";
-import { Event, Session, Speaker } from "@/lib/types";
+import { Speaker } from "@/types/speakers";
+import { Session} from "@/types/sessions";
+import { Event } from "@/types/events";
+
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(

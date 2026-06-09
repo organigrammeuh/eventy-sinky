@@ -1,5 +1,5 @@
 import { pool } from "@/lib/db";
-import { Room, RoomCreation } from "@/lib/types";
+import { Room, RoomCreation } from "@/types/room";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(

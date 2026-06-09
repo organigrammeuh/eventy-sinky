@@ -1,5 +1,8 @@
 import { pool } from "@/lib/db";
-import { Event, EventCreation, EventUpdate, Session, Speaker } from "@/lib/types";
+import {Event, EventUpdate} from '@/types/events'
+import {Session} from '@/types/sessions'
+import {Speaker} from '@/types/speakers'
+
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -214,9 +217,6 @@ export async function PATCH(
 
     updateParams.push(eventId);
     updateQuery += ` WHERE id = $${updateParams.length}`;
-
-    console.log(updateQuery);
-    console
 
     await pool.query(
         updateQuery, updateParams
