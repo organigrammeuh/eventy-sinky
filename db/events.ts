@@ -1,6 +1,7 @@
-import { Event, EventCreation } from "@/types/events";
+import { Event, EventCreation, EventUpdate } from "@/types/events";
 import { pool } from "@/lib/db";
 import { findEventSession } from "./session";
+import { AppError } from "@/lib/errors/AppError";
 
 export const createEvent = async (
     toSave : EventCreation
@@ -69,6 +70,14 @@ export const findEventById = async(
         [eventId]
     );
 
+    if(rows.length == 0){
+        throw new AppError(
+            `Event with id={${eventId}} not found.`,
+            404
+        )
+    }
+    
+
     const event : Event = {
         id: rows[0].id,
         title: rows[0].title,
@@ -82,4 +91,70 @@ export const findEventById = async(
 
     return event;
 
+}
+
+export const updateEvent = async(
+    eventId : string,
+    udpatedData : EventUpdate
+) => {
+
+    let updateQuery = `
+        UPDATE event
+        SET
+    `;
+
+    let updateParams : any[] = [];
+
+    if(udpatedData.description){
+        updateQuery += ' description = $1';
+        updateParams.push(udpatedData.description);
+    }
+
+    if(udpatedData.endDate){
+        if(updateParams.length != 0){
+            updateQuery += ','
+        }
+        updateParams.push(udpatedData.endDate);
+        updateQuery += ` end_date = $${updateParams.length}`;
+    }
+
+    if(udpatedData.startDate){
+        if(updateParams.length != 0){
+            updateQuery += ','
+        }
+        updateParams.push(udpatedData.startDate);
+        updateQuery += ` start_date = $${updateParams.length}`;
+    }
+
+    if(udpatedData.location){
+        if(updateParams.length != 0){
+            updateQuery += ','
+        }
+        updateParams.push(udpatedData.location);
+        updateQuery += ` place = $${updateParams.length}`;
+    }
+
+    if(udpatedData.title){
+        if(updateParams.length != 0){
+            updateQuery += ','
+        }
+        updateParams.push(udpatedData.title);
+        updateQuery += ` title = $${updateParams.length}`;
+    };
+
+    updateParams.push(eventId);
+    updateQuery += ` WHERE id = $${updateParams.length}`;
+
+    await pool.query(
+        updateQuery, updateParams
+    );
+
+    return await findEventById(eventId);
+}
+
+export const deleteEvent = async(
+    eventId : string
+) : Promise<void> => {
+    const deleteQuery = 'DELETE FROM event WHERE id = $1';
+    await pool.query(deleteQuery, [eventId]);
 }
