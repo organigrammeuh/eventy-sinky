@@ -1,3 +1,4 @@
+import { GetQuestion } from "./question"
 import { Speaker } from "./speakers"
 
 export interface SessionCreation {
@@ -11,5 +12,7 @@ export interface SessionCreation {
 
 export interface Session extends SessionCreation {
     id : string,
-    speakers ?: Speaker[]
+    speakers ?: Speaker[],
+    questions ?: GetQuestion[],
+    isLive ?: boolean
 }
