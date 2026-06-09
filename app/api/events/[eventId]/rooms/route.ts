@@ -1,154 +1,15 @@
-import { pool } from "@/lib/db";
-import { Speaker } from "@/types/speakers";
-import { Session} from "@/types/sessions";
-import { Event } from "@/types/events";
-
 import { NextRequest, NextResponse } from "next/server";
+import { RoomSessions } from "@/types/room";
+import { findSessionByRoom } from "@/db/room";
 
 export async function GET(
     req: NextRequest ,
     {params} : {params : {eventId : string}}
 ) {
-    const { eventId } = await params;
-        
-    const findEventQuery = `
-        SELECT 
-            id, title, description, start_date, end_date, place
-        FROM event
-        WHERE id = $1
-        `;
-    
-    const findSessionQuery = `
-        SELECT
-            s.id, s.title, s.description,
-            s.start_date, s.end_date, s.capacity,
-            r.name
-        FROM session s
-        JOIN room r on s.id_room = r.id
-        WHERE
-            id_event = $1
-
-    `;
-
-    const findSpeakerQuery = `
-        SELECT
-            id, full_name, profile_picture_url, biography
-        FROM speaker s
-        JOIN session_speaker ss
-            ON ss.id_speaker = s.id
-        WHERE ss.id_session = $1
-    `;
-
-    const findSpeakerLinksQuery = `
-        SELECT 
-            url
-        FROM link
-        WHERE id_speaker = $1
-        `;
-        
-    let eventSessions : Session[] = [];
-    
     try{
-    
-        const findEventResult = await pool.query(findEventQuery, [eventId]);
+        const { eventId } = await params;
 
-
-        if(findEventResult.rowCount == 0){
-            return NextResponse.json({
-                message: `Event with id={${eventId}} not found`
-            }, {
-                status : 404
-            })
-        }
-    
-    
-        const row = findEventResult.rows[0];
-
-        let event : Event = {
-            id: row.id,
-            description: row.description,
-            endDate: row.end_date,
-            startDate: row.start_date,
-            location: row.location,
-            title: row.title
-        };
-        
-
-        const findSessionResult = await pool.query(
-            findSessionQuery, [event.id]
-        );
-
-        for(const session of findSessionResult.rows){
-            let fetchedSession : Session = {
-                    id: session.id,
-                    capacity: session.capacity,
-                    description: session.description,
-                    endTime: session.end_date,
-                    room: session.name,
-                    startTime: session.start_date,
-                    title: session.title
-            };
-
-            const findSpeakerResult = await pool.query(
-                findSpeakerQuery , [session.id]
-            );
-            
-            const speakers : Speaker [] = [];
-
-            for(const speaker of findSpeakerResult.rows){
-                
-                let thisSpeaker : Speaker = {
-                    id: speaker.id,
-                    bio: speaker.biography,
-                    fullName: speaker.full_name,
-                    profilePicture: speaker.profile_picture_url
-                };
-
-                let links : string[] = [];
-
-                const getSpeakerLinkResult = await pool.query(
-                    findSpeakerLinksQuery , [speaker.id]
-                );
-
-                for(const linkRow of getSpeakerLinkResult.rows){
-                    links.push(linkRow.url);
-                }
-
-                thisSpeaker.socialLinks = links;
-                
-                speakers.push(thisSpeaker);
-
-            }
-            fetchedSession.speakers = speakers;
-
-            eventSessions.push(fetchedSession)
-        }
-
-        event.sessions = eventSessions;
-
-        const rooms = new Set();
-
-        for(const sess of eventSessions){
-            rooms.add(sess.room);
-        }
-
-        const sessionPerRoom = []
-
-        for(const room of rooms){
-
-            const roomSessions = [];
-
-            for(const session of eventSessions){
-                if(session.room == room){
-                    roomSessions.push(session);
-                }
-            }
-
-            sessionPerRoom.push({
-                name : room,
-                sessions : roomSessions
-            });
-        }
+        const sessionPerRoom : RoomSessions[] = await findSessionByRoom(eventId);
 
         return NextResponse.json(
             sessionPerRoom, {
@@ -159,10 +20,9 @@ export async function GET(
     } catch (err : any){
         return NextResponse.json(
             {
-                error : err.message,
-                message: 'Error when fecthing all the evnts'
+                message : err.message,
             },{
-                status: 500
+                status: err.status || 500
             }
         )
     }

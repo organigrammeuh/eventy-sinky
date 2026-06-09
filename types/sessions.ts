@@ -1,4 +1,5 @@
 import { GetQuestion } from "./question"
+import { Room } from "./room"
 import { Speaker } from "./speakers"
 
 export interface SessionCreation {
@@ -6,7 +7,7 @@ export interface SessionCreation {
     description : string,
     startTime : Date,
     endTime : Date,
-    room : string,
+    room : Room,
     capacity: number
 }
 
