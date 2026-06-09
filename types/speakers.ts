@@ -11,3 +11,9 @@ export interface Speaker extends SpeakerCreation {
     id : string,
     sessions?: Session[]
 }
+
+export interface SpeakerUpdate {
+    fullName ?: string,
+    profilePicture ?: string,
+    bio ?: string,
+};

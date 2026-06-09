@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
+import { findSessionById } from "@/db/session";
 
 export async function PATCH(
     _req: NextRequest,
@@ -8,16 +9,7 @@ export async function PATCH(
     const { eventId, sessionId, speakerId } = await params;
 
     try {
-        const sessionCheck = await pool.query(
-            `SELECT id FROM session WHERE id = $1 AND id_event = $2`,
-            [sessionId, eventId]
-        );
-        if (sessionCheck.rowCount === 0) {
-            return NextResponse.json(
-                { message: "Session not found" },
-                { status: 404 }
-            );
-        }
+        await findSessionById(sessionId, eventId);
 
         const speakerCheck = await pool.query(
             `SELECT id FROM speaker WHERE id = $1`,

@@ -1,85 +1,15 @@
-import { pool } from "@/lib/db";
-import { Session } from "@/types/sessions";
+import { createSpeaker, findAllSpeaker } from "@/db/speakers";
 import { Speaker , SpeakerCreation } from "@/types/speakers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
-
-    let speakers: Speaker[] = [];
-
-    const findSpeakerQuery = `
-        SELECT
-            id, full_name, profile_picture_url, biography
-        FROM speaker 
-    `;
-
-    const findSpeakerLinksQuery = `
-        SELECT 
-            url
-        FROM link
-        WHERE id_speaker = $1
-    `;
-
-    const findSessionQuery = `
-        SELECT
-            s.id, s.title, s.description,
-            s.start_date, s.end_date, s.capacity,
-            r.name AS room_name
-        FROM session s
-        JOIN room r on s.id_room = r.id
-        JOIN session_speaker ss
-            ON ss.id_session = s.id
-        WHERE ss.id_speaker = $1
-    `;
-
     try {
-        const findSpeakerResult = await pool.query(findSpeakerQuery);
-
-        for (const row of findSpeakerResult.rows) {
-
-            const findSessionResult = await pool.query(
-                findSessionQuery, [row.id]
-            );
-            const sessions: Session[] = [];
-
-            for (const session of findSessionResult.rows) {
-                sessions.push(
-                    {
-                        id: session.id,
-                        capacity: session.capacity,
-                        description: session.description,
-                        endTime: session.end_date,
-                        room: session.room_name,
-                        startTime: session.start_date,
-                        title: session.title
-                    }
-                );
-            }
-
-            let links: string[] = [];
-
-            const getSpeakerLinkResult = await pool.query(
-                findSpeakerLinksQuery, [row.id]
-            );
-
-            for (const linkRow of getSpeakerLinkResult.rows) {
-                links.push(linkRow.url);
-            }
-
-            speakers.push({
-                id: row.id,
-                fullName: row.full_name,
-                profilePicture: row.profile_picture_url,
-                bio: row.biography,
-                socialLinks: links,
-                sessions: sessions
-            });
-        }
+        const speakers: Speaker[] = await findAllSpeaker();
         return NextResponse.json(speakers, { status: 200 })
-    } catch (error) {
+    } catch (error : any) {
         return NextResponse.json(
-            { error: "Error when fetching all the speakers" },
-            { status: 500 }
+            { message : error.message},
+            { status: error.status || 500 }
         );
     }
 }
@@ -87,54 +17,27 @@ export async function GET() {
 export async function POST(
     req : NextRequest
 ) {
-    const toSave : SpeakerCreation = await req.json();
-    if (!toSave.fullName) {
-        return NextResponse.json(
-            { message: "fullName est obligatoire" },
-            { status: 400 }
-        );
-    }
-
-    const postSpeakerQuery = `
-        INSERT INTO speaker (full_name, profile_picture_url, biography)
-        VALUES ($1, $2, $3)
-        RETURNING id
-    `;
-
-    const postLinkQuery = `
-        INSERT INTO link (url, id_speaker)
-        VALUES ($1, $2)
-    `;
-
+    
     try {
+        
+        let toSave : SpeakerCreation | null = null ;
+        try {
 
-        const speakerResult = await pool.query(postSpeakerQuery, [
-            toSave.fullName,
-            toSave.profilePicture ?? null,  
-            toSave.bio ?? null              
-        ]);
+            toSave = await req.json();
 
-        const speakerId = speakerResult.rows[0].id;
-
-        if (toSave.socialLinks && toSave.socialLinks.length > 0) {
-            for (const url of toSave.socialLinks) {
-                const saveLinkResult = await pool.query(postLinkQuery, [
-                    url,
-                    speakerId
-                ]);
-
-                console.log(saveLinkResult)
+            if(!Object.keys(toSave!).includes('fullName')){
+                throw new Error('Wrong body')
             }
-        }
+        } catch {
 
-        const speaker: Speaker = {
-            id: speakerId,
-            fullName: toSave.fullName,
-            profilePicture: toSave.profilePicture ?? null,
-            bio: toSave.bio ?? null,
-            socialLinks: toSave.socialLinks ?? [],
-            sessions: []
-        };
+            return NextResponse.json(
+                { message : 'Not a valid body or missing fullName field'},
+                { status: 400 }
+            );
+
+        }
+    
+        const speaker = await createSpeaker(toSave!);
 
         return NextResponse.json(speaker, { status: 201 });
 
