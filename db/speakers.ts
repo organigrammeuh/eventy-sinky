@@ -213,6 +213,80 @@ export const createSpeaker = async(
     return await findSpeakerById(creatingSpeakerInfo.rows[0].id);
 }
 
+export const associateSpeakerToSession = async(
+    sessionId: string,
+    speakerId: string,
+    eventId: string
+) : Promise<void> => {
+    await findSessionById(sessionId, eventId);
+
+    const speakerResult = await pool.query(
+        `SELECT id FROM speaker WHERE id = $1`,
+        [speakerId]
+    );
+
+    if (speakerResult.rowCount === 0) {
+        throw new AppError(
+            `Speaker with id={${speakerId}} not found`,
+            404
+        );
+    }
+
+    const existingLink = await pool.query(
+        `SELECT id_session FROM session_speaker WHERE id_session = $1 AND id_speaker = $2`,
+        [sessionId, speakerId]
+    );
+
+    if (existingLink.rowCount && existingLink.rowCount > 0) {
+        throw new AppError(
+            "Speaker already associated to this session",
+            409
+        );
+    }
+
+    await pool.query(
+        `INSERT INTO session_speaker (id_session, id_speaker) VALUES ($1, $2)`,
+        [sessionId, speakerId]
+    );
+};
+
+export const dissociateSpeakerFromSession = async(
+    sessionId: string,
+    speakerId: string,
+    eventId: string
+) : Promise<void> => {
+    await findSessionById(sessionId, eventId);
+
+    const speakerResult = await pool.query(
+        `SELECT id FROM speaker WHERE id = $1`,
+        [speakerId]
+    );
+
+    if (speakerResult.rowCount === 0) {
+        throw new AppError(
+            `Speaker with id={${speakerId}} not found`,
+            404
+        );
+    }
+
+    const existingLink = await pool.query(
+        `SELECT id_session FROM session_speaker WHERE id_session = $1 AND id_speaker = $2`,
+        [sessionId, speakerId]
+    );
+
+    if (!existingLink.rowCount || existingLink.rowCount === 0) {
+        throw new AppError(
+            "Speaker not associated to this session",
+            409
+        );
+    }
+
+    await pool.query(
+        `DELETE FROM session_speaker WHERE id_session = $1 AND id_speaker = $2`,
+        [sessionId, speakerId]
+    );
+};
+
 export const deleteSpeaker = async(
     speakerId : string
 ) : Promise<void> => {
