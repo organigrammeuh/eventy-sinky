@@ -34,3 +34,22 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+### How to use GITHUB Oauth and Google Oauth2 ?
+
+Just add a new content for .env file like on .env.example such as :
+
+```
+JWT_ACCESS_SECRET=8f4a2c9e7d1b5f3a6c8e0d2f9a1b7c4e
+JWT_REFRESH_SECRET=3c7f1a9d5e8b2f6a4d0c1e7f9b3a5d8e
+
+GITHUB_CLIENT_ID=Ov23ct5hch6mGvEDh6cf
+GITHUB_CLIENT_SECRET=e73482b3b0c752925f5e37d5f9989153c1ba072a
+GITHUB_REDIRECT_URI=http://localhost:3000/api/auth/github/callback
+
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
+```
+
+Don't forget the jwt token !!!
