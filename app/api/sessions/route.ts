@@ -3,7 +3,7 @@ import { Speaker, Session } from "@/lib/types";
 import { NextResponse } from "next/server";
 
 export async function GET() {
-    let sessions: Session[] = [];
+    const sessions: Session[] = [];
 
     const findSessionQuery = `
         SELECT
