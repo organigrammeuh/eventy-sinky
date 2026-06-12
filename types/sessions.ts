@@ -16,5 +16,25 @@ export interface Session extends SessionCreation {
     eventId ?: string,
     speakers ?: Speaker[],
     questions ?: GetQuestion[],
-    isLive ?: boolean
+    isLive ?: boolean,
+    event?: { id: string, title: string }
+}
+
+export interface SessionPagination {
+    sessions: Session[],
+    total: number
+}
+
+export interface SessionFiltering {
+    title?: string,
+    event_id?: string,
+    start_date?: string,
+    end_date?: string
+}
+
+export interface SessionSorting {
+    title: string
+    start_date: string
+    end_date: string
+    event_title: string
 }

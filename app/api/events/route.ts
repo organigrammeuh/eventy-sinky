@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Event, EventCreation } from "@/types/events";
 import { createEvent, findAllEvent } from "@/db/events";
+import { EventCreation, EventFiltering, EventPagination } from "@/types/events";
+import { toSnakeCase } from "@/lib/params";
+import { toLowerCase } from "zod";
+import { Event, EventCreation } from "@/types/events";
+
 
 export async function POST (
     req : NextRequest
@@ -37,16 +41,58 @@ export async function POST (
     }
 }
 
-export async function GET(){
+export async function GET(
+    req: NextRequest
+){
     
     try{
-        const events : Event[] = await findAllEvent();
 
-        return NextResponse.json(
-            events , {status: 200}
+        const range = req.nextUrl.searchParams.get("range");
+        let sort : any = [];
+        try {
+            const sortParam = req.nextUrl.searchParams.get("sort");
+            if (sortParam) sort = JSON.parse(sortParam);
+            //TODO: migration => change in the db place -> location
+            if(sort[0] == 'location') sort[0] = 'place'
+        } catch {
+            sort = [];
+        }
+        
+        console.log(req.nextUrl.searchParams.get("filter"))
+
+        let filters : EventFiltering = {};
+        try {
+            const filtersParams = req.nextUrl.searchParams.get("filter");
+            if (filtersParams) filters = JSON.parse(filtersParams);
+        } catch {
+            filters = {};
+        }
+
+        for (const key of ['start_date', 'end_date'] as const) {
+            const val = filters[key];
+            if (val && !/[Z+-]\d/.test(val)) filters[key] = val + 'Z';
+        }
+
+
+        const sorting = sort.length == 0 ? [] : [toSnakeCase(sort[0]), sort[1]];
+
+        const rangeParsed : number[] = range ? JSON.parse(range) : [];
+        const events : EventPagination = await findAllEvent(rangeParsed, sorting, filters);
+
+        const res =  NextResponse.json(
+            events.events , {status: 200}
+        ) ;
+
+        res.headers.set(
+            "Content-Range",
+            `events ${rangeParsed[0]}-${rangeParsed[1]}/${events.total}`
         );
+
+        return res;
         
     } catch (err : any){
+        console.log(err.message)
+
         return NextResponse.json(
             {
                 error : err.message,

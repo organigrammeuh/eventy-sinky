@@ -1,4 +1,4 @@
-import { Event, EventCreation, EventUpdate } from "@/types/events";
+import { Event, EventCreation, EventFiltering, EventPagination, EventUpdate } from "@/types/events";
 import { pool } from "@/lib/db";
 import { findEventSession } from "./session";
 import { AppError } from "@/lib/errors/AppError";
@@ -37,21 +37,55 @@ export const createEvent = async (
 
 }
 
-export const findAllEvent = async() : Promise<Event[]> => {
-    const findEventsQuery = `
-        select id from event
-    `;
+export const findAllEvent = async(
+    range ?: number[],
+    sort ?: string[],
+    filter ?: EventFiltering
+) : Promise<EventPagination> => {
 
-    const events : Event[] = [];
+    const conditions: string[] = [];
+    const values: any[] = [];
 
-    const {rows} = await pool.query(findEventsQuery);
-
-    for(const row of rows){
-        const event = await findEventById(row.id);
-        events.push(event);
+    if (filter) {
+        if (filter.location) {
+            conditions.push(`place ilike $${values.length + 1}`);
+            values.push(`%${filter.location}%`);
+        }
+        if (filter.end_date) {
+            conditions.push(`end_date < $${values.length + 1}`);
+            values.push(filter.end_date);
+        }
+        if (filter.start_date) {
+            conditions.push(`start_date > $${values.length + 1}`);
+            values.push(filter.start_date);
+        }
+        if (filter.title) {
+            conditions.push(`title ilike $${values.length + 1}`);
+            values.push(`%${filter.title}%`);
+        }
     }
 
-    return events;
+    let findEventsQuery = `select id from event`;
+
+    if (conditions.length > 0) {
+        findEventsQuery += ` where ${conditions.join(' and ')}`;
+    }
+
+    const allowedDirections = ['asc', 'desc', 'ASC', 'DESC'];
+    if (sort && sort.length > 0 && allowedDirections.includes(sort[1])) {
+        findEventsQuery += ` order by ${sort[0]} ${sort[1]}`;
+    }
+
+    const {rows} = await pool.query(findEventsQuery, values);
+
+    const toFind = range?.length ? rows.slice(range[0], range[1] + 1) : rows;
+
+    const events: Event[] = [];
+    for (const row of toFind) {
+        events.push(await findEventById(row.id));
+    }
+
+    return {events, total: rows.length};
 }
 
 export const findEventById = async(
