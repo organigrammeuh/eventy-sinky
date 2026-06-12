@@ -16,14 +16,14 @@ type Session = {
 };
 
 function fmt(d: string) {
-    return new Date(d).toLocaleTimeString("fr-FR", {
+    return new Date(d).toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
     });
 }
 
 function fmtDate(d: string) {
-    return new Date(d).toLocaleDateString("fr-FR", {
+    return new Date(d).toLocaleDateString("en-US", {
         weekday: "short",
         day: "numeric",
         month: "short",
@@ -84,7 +84,7 @@ export default function FavoritesPage() {
     };
 
     return (
-        <main className="pt-20 min-h-screen">
+        <main className="pt-20 min-h-screen backdrop-blur-[2px]">
             <div className="max-w-2xl mx-auto p-6">
                 <h1 className="text-2xl font-bold mb-2">Mes favoris</h1>
                 <p className="text-sm text-muted-foreground mb-6">
