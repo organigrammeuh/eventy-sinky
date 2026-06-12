@@ -60,7 +60,7 @@
     --g-brand: linear-gradient(135deg, #534AB7 0%, #3C3489 100%);
     --g-hero:  linear-gradient(135deg, #007395 0%, #26215C 40%, #9faced 100%);
     --g-card:  linear-gradient(135deg, #534AB7 0%, #3C3489 100%);
-    --g-live:  linear-gradient(90deg, #d946ef, #8b5cf6, #06b6d4);
+    --g-live:  linear-gradient(90deg, #d946ef, #311f5a, #064ed4);
 
     --nasa-overlay: linear-gradient(
             to bottom,
