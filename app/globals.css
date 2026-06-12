@@ -61,6 +61,15 @@
     --g-hero:  linear-gradient(135deg, #007395 0%, #26215C 40%, #9faced 100%);
     --g-card:  linear-gradient(135deg, #534AB7 0%, #3C3489 100%);
     --g-live:  linear-gradient(90deg, #d946ef, #8b5cf6, #06b6d4);
+
+    --nasa-overlay: linear-gradient(
+            to bottom,
+            rgba(20, 15, 60, 0.55) 0%,
+            rgba(30, 20, 80, 0.45) 40%,
+            rgba(240, 238, 255, 0.31) 100%
+    );
+    --section-bg: rgba(245, 244, 255, 0.88);
+    --section-bg-alt: rgba(235, 233, 255, 0.85);
 }
 
 .dark {
@@ -86,6 +95,16 @@
     --g-hero:  linear-gradient(135deg, #007395 0%, #26215C 40%, #0a174a 100%);
     --g-card:  linear-gradient(135deg, #6056cc 0%, #4840a0 100%);
     --g-live:  linear-gradient(90deg, #e879f9, #a78bfa, #22d3ee);
+
+    /* NASA bg overlays — dark mode: much darker, photo barely visible */
+    --nasa-overlay: linear-gradient(
+            to bottom,
+            rgba(4, 2, 20, 0.72) 0%,
+            rgba(8, 4, 30, 0.65) 40%,
+            rgba(8, 6, 20, 0.96) 100%
+    );
+    --section-bg: rgba(10, 8, 28, 0.88);
+    --section-bg-alt: rgba(14, 11, 35, 0.85);
 }
 
 @layer base {
@@ -105,7 +124,78 @@
     }
 }
 
-::-webkit-scrollbar        { width: 4px; }
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: url("/hey.jpg");
+    background-size: cover;
+    background-position: center 30%;
+    background-repeat: no-repeat;
+}
+
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: var(--nasa-overlay);
+    pointer-events: none;
+}
+Recent sessions
+
+.hero-section {
+    background: transparent;
+}
+
+.homepage-section {
+    background: var(--section-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--card-border);
+}
+
+.homepage-section-alt {
+    background: var(--section-bg-alt);
+}
+
+.homepage-section-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 5rem 1.5rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-family: "Syne", sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--foreground);
+}
+.section-title-too {
+    font-family: "Syne", sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.section-link {
+    font-size: 0.875rem;
+    color: var(--primary);
+    font-weight: 500;
+    text-decoration: none;
+}
+.section-link:hover { text-decoration: underline; }
+
+::-webkit-scrollbar        { width: 0px; }
 ::-webkit-scrollbar-thumb  { background: var(--primary); border-radius: 10px; }
 
 .gradient-brand-text {
@@ -120,7 +210,7 @@
 .bg-gradient-live  { background: var(--g-live);  }
 
 .glass {
-    background: color-mix(in oklab, var(--card) 80%, transparent 20%);
+    background: color-mix(in oklab, var(--card) 70%, transparent 30%);
     backdrop-filter: blur(16px);
     border: 0.5px solid var(--card-border);
 }
