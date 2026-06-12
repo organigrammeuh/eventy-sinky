@@ -18,6 +18,10 @@ export interface SpeakerUpdate {
     bio ?: string,
 };
 
+export interface SpeakerFiltering {
+    full_name?: string
+}
+
 export interface SpeakerPagination {
     speakers: Speaker[],
     total: number

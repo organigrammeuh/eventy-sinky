@@ -1,7 +1,7 @@
 import { pool } from "@/lib/db";
 import { AppError } from "@/lib/errors/AppError";
 import { Session } from "@/types/sessions";
-import { Speaker, SpeakerCreation, SpeakerPagination, SpeakerUpdate } from "@/types/speakers";
+import { Speaker, SpeakerCreation, SpeakerFiltering, SpeakerPagination, SpeakerUpdate } from "@/types/speakers";
 import { findSessionById } from "./session";
 
 export const findSessionSpeaker = async (
@@ -170,9 +170,23 @@ export const updateSpeaker = async(
 }
 
 export const findAllSpeaker = async(
-    range?: number[]
+    range?: number[],
+    filter?: SpeakerFiltering
 ) : Promise<SpeakerPagination> => {
-    const {rows} = await pool.query('select id from speaker');
+    const conditions: string[] = [];
+    const values: any[] = [];
+
+    if (filter?.full_name) {
+        conditions.push(`full_name ilike $${values.length + 1}`);
+        values.push(`%${filter.full_name}%`);
+    }
+
+    let query = 'select id from speaker';
+    if (conditions.length > 0) {
+        query += ` where ${conditions.join(' and ')}`;
+    }
+
+    const {rows} = await pool.query(query, values);
 
     const toFind = range?.length ? rows.slice(range[0], range[1] + 1) : rows;
 

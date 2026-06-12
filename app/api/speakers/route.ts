@@ -1,12 +1,21 @@
 import { createSpeaker, findAllSpeaker } from "@/db/speakers";
-import { Speaker, SpeakerCreation, SpeakerPagination } from "@/types/speakers";
+import { Speaker, SpeakerCreation, SpeakerFiltering, SpeakerPagination } from "@/types/speakers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
     try {
         const range = req.nextUrl.searchParams.get("range");
         const rangeParsed: number[] = range ? JSON.parse(range) : [];
-        const result: SpeakerPagination = await findAllSpeaker(rangeParsed);
+
+        let filters: SpeakerFiltering = {};
+        try {
+            const filterParam = req.nextUrl.searchParams.get("filter");
+            if (filterParam) filters = JSON.parse(filterParam);
+        } catch {
+            filters = {};
+        }
+
+        const result: SpeakerPagination = await findAllSpeaker(rangeParsed, filters);
 
         const res = NextResponse.json(result.speakers, { status: 200 });
 
