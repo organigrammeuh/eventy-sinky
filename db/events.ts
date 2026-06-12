@@ -52,11 +52,11 @@ export const findAllEvent = async(
             values.push(`%${filter.location}%`);
         }
         if (filter.end_date) {
-            conditions.push(`date(end_date) < $${values.length + 1}`);
+            conditions.push(`end_date < $${values.length + 1}`);
             values.push(filter.end_date);
         }
         if (filter.start_date) {
-            conditions.push(`date(start_date) > $${values.length + 1}`);
+            conditions.push(`start_date > $${values.length + 1}`);
             values.push(filter.start_date);
         }
         if (filter.title) {

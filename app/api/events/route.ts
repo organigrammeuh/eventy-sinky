@@ -66,6 +66,11 @@ export async function GET(
             filters = {};
         }
 
+        for (const key of ['start_date', 'end_date'] as const) {
+            const val = filters[key];
+            if (val && !/[Z+-]\d/.test(val)) filters[key] = val + 'Z';
+        }
+
 
         const sorting = sort.length == 0 ? [] : [toSnakeCase(sort[0]), sort[1]];
 

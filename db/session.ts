@@ -1,5 +1,5 @@
 import { pool } from "@/lib/db";
-import { Session, SessionCreation } from "@/types/sessions";
+import { Session, SessionCreation, SessionFiltering, SessionPagination } from "@/types/sessions";
 import { findSessionSpeaker } from "./speakers";
 import { AppError } from "@/lib/errors/AppError";
 import { getQuestionsBySession } from "./questions";
@@ -32,9 +32,11 @@ export const findSessionById = async(
         SELECT
             s.id, s.title, s.description,
             s.start_date, s.end_date, s.capacity,
-            r.name as room_name, r.id as room_id
+            r.name as room_name, r.id as room_id,
+            e.id as event_id, e.title as event_title
         FROM session s
         JOIN room r on s.id_room = r.id
+        JOIN event e on s.id_event = e.id
         WHERE
             s.id = $1
     `;
@@ -68,7 +70,11 @@ export const findSessionById = async(
             name : session.room_name
         },
         startTime: session.start_date,
-        title: session.title
+        title: session.title,
+        event: {
+            id: session.event_id,
+            title: session.event_title
+        }
     };
 
     fetchedSession.speakers = await findSessionSpeaker(session.id);
@@ -180,4 +186,50 @@ export const updateSession = async (
         eventId
     );
 
+}
+
+export const findAllSessions = async(
+    range?: number[],
+    filter?: SessionFiltering
+) : Promise<SessionPagination> => {
+
+    const conditions: string[] = [];
+    const values: any[] = [];
+
+    if (filter?.title) {
+        conditions.push(`title ilike $${values.length + 1}`);
+        values.push(`%${filter.title}%`);
+    }
+    if (filter?.event_id) {
+        conditions.push(`id_event = $${values.length + 1}`);
+        values.push(filter.event_id);
+    }
+
+    //TODO: migration, adding time zone to the start_date and end_date
+    if (filter?.start_date) {
+        conditions.push(`start_date > $${values.length + 1}`);
+        values.push(filter.start_date);
+    }
+    if (filter?.end_date) {
+        conditions.push(`end_date < $${values.length + 1}`);
+        values.push(filter.end_date);
+    }
+
+    let query = 'select id from session';
+    if (conditions.length > 0) {
+        query += ` where ${conditions.join(' and ')}`;
+    }
+    
+    console.log(query,values)
+
+    const {rows} = await pool.query(query, values);
+
+    const toFind = range?.length ? rows.slice(range[0], range[1] + 1) : rows;
+
+    const sessions: Session[] = [];
+    for (const row of toFind) {
+        sessions.push(await findSessionById(row.id));
+    }
+
+    return {sessions, total: rows.length};
 }
