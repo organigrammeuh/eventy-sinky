@@ -26,8 +26,8 @@ const fetchAllEvents = async (): Promise<Event[]> => {
 
 function formatDateRange(startDate: string, endDate: string) {
     const months = [
-        "Janv.", "Févr.", "Mars", "Avril", "Mai", "Juin",
-        "Juil.", "Août", "Sept.", "Oct.", "Nov.", "Déc.",
+        "Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.",
+        "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec.",
     ];
     const s = new Date(startDate);
     const e = new Date(endDate);
