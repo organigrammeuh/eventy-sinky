@@ -1,10 +1,8 @@
-import { Speaker, Session } from "@/lib/types";
+import { Speaker } from "@/lib/types";
 import Link from "next/link";
 
 type SpeakerProps = {
-    params: {
-        speakerId: string;
-    };
+    params: Promise<{ speakerId: string }>;
 };
 
 const getLinkLabel = (link: string) => {
@@ -25,23 +23,25 @@ const getInitials = (fullName: string) => {
         .slice(0, 2);
 };
 
-const refractorTime = (date: Date) => {
+const formatTime = (date: Date | string) => {
+    const d = new Date(date);
     return (
-        "" +
-        new Date(date).getDate() +
+        d.getDate() +
         "/" +
-        (new Date(date).getMonth() + 1) +
+        (d.getMonth() + 1) +
         " - " +
-        new Date(date).toISOString().substring(11, 16)
+        d.toISOString().substring(11, 16)
     );
 };
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
 export default async function SpeakerPage({ params }: SpeakerProps) {
     const { speakerId } = await params;
 
-    const speakerRes = await fetch(
-        "http://localhost:3000/api/speakers/" + speakerId
-    );
+    const speakerRes = await fetch(`${BASE_URL}/api/speakers/${speakerId}`, {
+        cache: "no-store",
+    });
     const speaker: Speaker = await speakerRes.json();
 
     return (
@@ -63,7 +63,6 @@ export default async function SpeakerPage({ params }: SpeakerProps) {
                 <div>
                     <p className="text-2xl mb-1">{speaker.fullName}</p>
 
-                    {/* Social links */}
                     {speaker.socialLinks && speaker.socialLinks.length > 0 && (
                         <div className="flex gap-3 flex-wrap">
                             {speaker.socialLinks.map((link, i) => (
@@ -82,7 +81,6 @@ export default async function SpeakerPage({ params }: SpeakerProps) {
                 </div>
             </div>
 
-            {/* Bio */}
             {speaker.bio && (
                 <div className="p-5 border-b">
                     <p className="font-semibold mb-2">Bio</p>
@@ -90,24 +88,25 @@ export default async function SpeakerPage({ params }: SpeakerProps) {
                 </div>
             )}
 
-            {/* Sessions */}
             <div className="p-5">
                 <p className="font-semibold mb-4">
                     Sessions ({speaker.sessions?.length ?? 0})
                 </p>
 
                 {speaker.sessions && speaker.sessions.length > 0 ? (
-                    <div className="flex flex-col gap-3 w-1/2">
-                        {speaker.sessions.map((session: Session) => (
+                    <div className="flex flex-col gap-3 w-full max-w-lg">
+                        {speaker.sessions.map((session: any) => (
                             <Link key={session.id} href={`/sessions/${session.id}`}>
                                 <div className="p-3 border rounded-xl hover:bg-gray-50 transition-colors">
                                     <div className="flex gap-4">
                                         <p className="text-blue-400 whitespace-nowrap text-sm">
-                                            {refractorTime(session.startTime)}
+                                            {formatTime(session.startTime)}
                                         </p>
                                         <div>
                                             <p className="font-medium">{session.title}</p>
-                                            <p className="text-gray-500 text-sm">{session.room}</p>
+                                            <p className="text-gray-500 text-sm">
+                                                {session.room?.name}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
