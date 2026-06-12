@@ -1,5 +1,5 @@
 import { pool } from "@/lib/db";
-import { Session, SessionCreation, SessionFiltering, SessionPagination } from "@/types/sessions";
+import { Session, SessionCreation, SessionFiltering, SessionPagination, SessionSorting } from "@/types/sessions";
 import { findSessionSpeaker } from "./speakers";
 import { AppError } from "@/lib/errors/AppError";
 import { getQuestionsBySession } from "./questions";
@@ -190,37 +190,48 @@ export const updateSession = async (
 
 export const findAllSessions = async(
     range?: number[],
-    filter?: SessionFiltering
+    filter?: SessionFiltering,
+    sort?: string[]
 ) : Promise<SessionPagination> => {
 
     const conditions: string[] = [];
     const values: any[] = [];
 
     if (filter?.title) {
-        conditions.push(`title ilike $${values.length + 1}`);
+        conditions.push(`session.title ilike $${values.length + 1}`);
         values.push(`%${filter.title}%`);
     }
     if (filter?.event_id) {
-        conditions.push(`id_event = $${values.length + 1}`);
+        conditions.push(`session.id_event = $${values.length + 1}`);
         values.push(filter.event_id);
     }
-
-    //TODO: migration, adding time zone to the start_date and end_date
     if (filter?.start_date) {
-        conditions.push(`start_date > $${values.length + 1}`);
+        conditions.push(`session.start_date > $${values.length + 1}`);
         values.push(filter.start_date);
     }
     if (filter?.end_date) {
-        conditions.push(`end_date < $${values.length + 1}`);
+        conditions.push(`session.end_date < $${values.length + 1}`);
         values.push(filter.end_date);
     }
 
-    let query = 'select id from session';
+    let query = 'select session.id from session join event on session.id_event = event.id';
     if (conditions.length > 0) {
         query += ` where ${conditions.join(' and ')}`;
     }
-    
-    console.log(query,values)
+
+
+    const allowedDirections = ['asc', 'desc', 'ASC', 'DESC'];
+
+    if(sort){
+        if(sort[0] == 'event_title') sort[0] = 'event.title';
+        else if(sort[0] == 'title') sort[0] = 'session.title';
+        else if(sort[0] == 'endTime') sort[0] = 'session.end_date'
+        else if(sort[0] == 'startTime') sort[0] = 'session.start_date'
+    }
+
+    if (sort && sort.length > 0 && allowedDirections.includes(sort[1]) ) {
+        query += ` order by ${[sort[0]]} ${sort[1]}`;
+    }
 
     const {rows} = await pool.query(query, values);
 

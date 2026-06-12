@@ -3,6 +3,7 @@ import { AppError } from "@/lib/errors/AppError";
 import { Session } from "@/types/sessions";
 import { Speaker, SpeakerCreation, SpeakerFiltering, SpeakerPagination, SpeakerUpdate } from "@/types/speakers";
 import { findSessionById } from "./session";
+import { toSnakeCase } from "@/lib/params";
 
 export const findSessionSpeaker = async (
     sessionId : string
@@ -171,7 +172,8 @@ export const updateSpeaker = async(
 
 export const findAllSpeaker = async(
     range?: number[],
-    filter?: SpeakerFiltering
+    filter?: SpeakerFiltering,
+    sort?: string[]
 ) : Promise<SpeakerPagination> => {
     const conditions: string[] = [];
     const values: any[] = [];
@@ -184,6 +186,11 @@ export const findAllSpeaker = async(
     let query = 'select id from speaker';
     if (conditions.length > 0) {
         query += ` where ${conditions.join(' and ')}`;
+    }
+
+    const allowedDirections = ['asc', 'desc', 'ASC', 'DESC'];
+    if (sort && sort.length > 0 && allowedDirections.includes(sort[1])) {
+        query += ` order by ${toSnakeCase(sort[0])} ${sort[1]}`;
     }
 
     const {rows} = await pool.query(query, values);

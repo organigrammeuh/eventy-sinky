@@ -7,6 +7,15 @@ export async function GET(req: NextRequest) {
         const range = req.nextUrl.searchParams.get("range");
         const rangeParsed: number[] = range ? JSON.parse(range) : [];
 
+        let sort: any = [];
+        try {
+            const sortParam = req.nextUrl.searchParams.get("sort");
+            if (sortParam) sort = JSON.parse(sortParam);
+            console.log(sort)
+        } catch {
+            sort = [];
+        }
+
         let filters: SessionFiltering = {};
         try {
             const filterParam = req.nextUrl.searchParams.get("filter");
@@ -14,8 +23,7 @@ export async function GET(req: NextRequest) {
         } catch {
             filters = {};
         }
-
-        const result: SessionPagination = await findAllSessions(rangeParsed, filters);
+        const result: SessionPagination = await findAllSessions(rangeParsed, filters, sort);
 
         const res = NextResponse.json(result.sessions);
 

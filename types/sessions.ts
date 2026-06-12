@@ -30,3 +30,10 @@ export interface SessionFiltering {
     start_date?: string,
     end_date?: string
 }
+
+export interface SessionSorting {
+    title: string
+    start_date: string
+    end_date: string
+    event_title: string
+}

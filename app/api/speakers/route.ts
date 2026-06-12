@@ -7,6 +7,15 @@ export async function GET(req: NextRequest) {
         const range = req.nextUrl.searchParams.get("range");
         const rangeParsed: number[] = range ? JSON.parse(range) : [];
 
+        let sort: any = [];
+        try {
+            const sortParam = req.nextUrl.searchParams.get("sort");
+            if (sortParam) sort = JSON.parse(sortParam);
+            console.log(sort);
+        } catch {
+            sort = [];
+        }
+
         let filters: SpeakerFiltering = {};
         try {
             const filterParam = req.nextUrl.searchParams.get("filter");
@@ -15,7 +24,7 @@ export async function GET(req: NextRequest) {
             filters = {};
         }
 
-        const result: SpeakerPagination = await findAllSpeaker(rangeParsed, filters);
+        const result: SpeakerPagination = await findAllSpeaker(rangeParsed, filters, sort);
 
         const res = NextResponse.json(result.speakers, { status: 200 });
 
