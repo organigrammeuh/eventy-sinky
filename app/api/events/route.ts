@@ -3,6 +3,8 @@ import { createEvent, findAllEvent } from "@/db/events";
 import { EventCreation, EventFiltering, EventPagination } from "@/types/events";
 import { toSnakeCase } from "@/lib/params";
 import { toLowerCase } from "zod";
+import { Event, EventCreation } from "@/types/events";
+
 
 export async function POST (
     req : NextRequest

@@ -13,39 +13,26 @@ export const findSessionByRoom = async(
             
     const eventSessions :  Session[] = await findEventSession(eventId);
 
-    const rooms: Set<Room> = new Set();
+    const roomMap = new Map<string, { room: Room; sessions: Session[] }>();
 
-    for(const sess of eventSessions){
-        rooms.add(sess.room);
-    }
-
-    const sessionPerRoom : RoomSessions[] = []
-
-    for(const room of rooms){
-
-        const roomSessions = [];
-
-        for(const session of eventSessions){
-            if(session.room.id == room.id){
-                roomSessions.push(session);
-            }
+    for (const sess of eventSessions) {
+        const key = sess.room.id;
+        if (!roomMap.has(key)) {
+            roomMap.set(key, { room: sess.room, sessions: [] });
         }
-
-        sessionPerRoom.push({
-            id: room.id,
-            name: room.name,
-            sessions : roomSessions
-        });
+        roomMap.get(key)!.sessions.push(sess);
     }
 
-    return sessionPerRoom;
-}
+    return Array.from(roomMap.values()).map(({ room, sessions }) => ({
+        id: room.id,
+        name: room.name,
+        sessions,
+    }));
+};
 
-export const findRoomById = async(
-    roomId : string
-): Promise<Room> => {
-    const {rows} = await pool.query(
-        'select id, name from room where id = $1',
+export const findRoomById = async (roomId: string): Promise<Room> => {
+    const { rows } = await pool.query(
+        "SELECT id, name FROM room WHERE id = $1",
         [roomId]
     );
 
@@ -59,13 +46,10 @@ export const findRoomById = async(
     return rows[0] as Room;
 }
 
-export const findSessionsByRoomId = async(
-    roomId : string
-) => {
-
+export const findSessionsByRoomId = async (roomId: string): Promise<Session[]> => {
     const {rows} = await pool.query(
         `SELECT
-                s.id,
+                s.id
             FROM session s
             WHERE s.id_room = $1
             ORDER BY s.start_date ASC`,

@@ -13,6 +13,7 @@ export interface SessionCreation {
 
 export interface Session extends SessionCreation {
     id : string,
+    eventId ?: string,
     speakers ?: Speaker[],
     questions ?: GetQuestion[],
     isLive ?: boolean,
