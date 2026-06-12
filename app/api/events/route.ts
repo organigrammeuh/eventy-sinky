@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { pool } from "@/lib/db";
 import { Event, EventCreation } from "@/types/events";
-import { Session } from "@/types/sessions";
-import { Speaker } from "@/types/speakers";
 import { createEvent, findAllEvent } from "@/db/events";
-import { findSessionSpeaker } from "@/db/speakers";
 
 export async function POST (
     req : NextRequest
