@@ -1,8 +1,9 @@
 import { pool } from "@/lib/db";
 import { AppError } from "@/lib/errors/AppError";
 import { Session } from "@/types/sessions";
-import { Speaker, SpeakerCreation, SpeakerUpdate } from "@/types/speakers";
+import { Speaker, SpeakerCreation, SpeakerFiltering, SpeakerPagination, SpeakerUpdate } from "@/types/speakers";
 import { findSessionById } from "./session";
+import { toSnakeCase } from "@/lib/params";
 
 export const findSessionSpeaker = async (
     sessionId : string
@@ -169,17 +170,39 @@ export const updateSpeaker = async(
 
 }
 
-export const findAllSpeaker = async() : Promise<Speaker[]> => {
-    const {rows} = await pool.query('select id from speaker');
-    
-    const speakers : Speaker[] = [];
+export const findAllSpeaker = async(
+    range?: number[],
+    filter?: SpeakerFiltering,
+    sort?: string[]
+) : Promise<SpeakerPagination> => {
+    const conditions: string[] = [];
+    const values: any[] = [];
 
-    for(const row of rows) {
-        const speaker = await findSpeakerById(row.id);
-        speakers.push(speaker);
+    if (filter?.full_name) {
+        conditions.push(`full_name ilike $${values.length + 1}`);
+        values.push(`%${filter.full_name}%`);
     }
 
-    return speakers;
+    let query = 'select id from speaker';
+    if (conditions.length > 0) {
+        query += ` where ${conditions.join(' and ')}`;
+    }
+
+    const allowedDirections = ['asc', 'desc', 'ASC', 'DESC'];
+    if (sort && sort.length > 0 && allowedDirections.includes(sort[1])) {
+        query += ` order by ${toSnakeCase(sort[0])} ${sort[1]}`;
+    }
+
+    const {rows} = await pool.query(query, values);
+
+    const toFind = range?.length ? rows.slice(range[0], range[1] + 1) : rows;
+
+    const speakers: Speaker[] = [];
+    for (const row of toFind) {
+        speakers.push(await findSpeakerById(row.id));
+    }
+
+    return {speakers, total: rows.length};
 }
 
 export const createSpeaker = async(
