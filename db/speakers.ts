@@ -1,7 +1,7 @@
 import { pool } from "@/lib/db";
 import { AppError } from "@/lib/errors/AppError";
 import { Session } from "@/types/sessions";
-import { Speaker, SpeakerCreation, SpeakerUpdate } from "@/types/speakers";
+import { Speaker, SpeakerCreation, SpeakerPagination, SpeakerUpdate } from "@/types/speakers";
 import { findSessionById } from "./session";
 
 export const findSessionSpeaker = async (
@@ -169,17 +169,19 @@ export const updateSpeaker = async(
 
 }
 
-export const findAllSpeaker = async() : Promise<Speaker[]> => {
+export const findAllSpeaker = async(
+    range?: number[]
+) : Promise<SpeakerPagination> => {
     const {rows} = await pool.query('select id from speaker');
-    
-    const speakers : Speaker[] = [];
 
-    for(const row of rows) {
-        const speaker = await findSpeakerById(row.id);
-        speakers.push(speaker);
+    const toFind = range?.length ? rows.slice(range[0], range[1] + 1) : rows;
+
+    const speakers: Speaker[] = [];
+    for (const row of toFind) {
+        speakers.push(await findSpeakerById(row.id));
     }
 
-    return speakers;
+    return {speakers, total: rows.length};
 }
 
 export const createSpeaker = async(

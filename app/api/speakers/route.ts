@@ -1,11 +1,21 @@
 import { createSpeaker, findAllSpeaker } from "@/db/speakers";
-import { Speaker , SpeakerCreation } from "@/types/speakers";
+import { Speaker, SpeakerCreation, SpeakerPagination } from "@/types/speakers";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
-        const speakers: Speaker[] = await findAllSpeaker();
-        return NextResponse.json(speakers, { status: 200 })
+        const range = req.nextUrl.searchParams.get("range");
+        const rangeParsed: number[] = range ? JSON.parse(range) : [];
+        const result: SpeakerPagination = await findAllSpeaker(rangeParsed);
+
+        const res = NextResponse.json(result.speakers, { status: 200 });
+
+        res.headers.set(
+            "Content-Range",
+            `speakers ${rangeParsed[0]}-${rangeParsed[1]}/${result.total}`
+        );
+
+        return res;
     } catch (error : any) {
         return NextResponse.json(
             { message : error.message},

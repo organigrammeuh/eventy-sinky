@@ -17,3 +17,8 @@ export interface SpeakerUpdate {
     profilePicture ?: string,
     bio ?: string,
 };
+
+export interface SpeakerPagination {
+    speakers: Speaker[],
+    total: number
+};
