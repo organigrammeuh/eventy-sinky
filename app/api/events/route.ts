@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createEvent, findAllEvent } from "@/db/events";
-import { EventCreation, EventPagination } from "@/types/events";
+import { EventCreation, EventFiltering, EventPagination } from "@/types/events";
 import { toSnakeCase } from "@/lib/params";
 import { toLowerCase } from "zod";
 
@@ -46,22 +46,31 @@ export async function GET(
     try{
 
         const range = req.nextUrl.searchParams.get("range");
-        const filter = req.nextUrl.searchParams.get("filter");
         let sort : any = [];
         try {
             const sortParam = req.nextUrl.searchParams.get("sort");
             if (sortParam) sort = JSON.parse(sortParam);
-            console.log(sort)
-
             //TODO: migration => change in the db place -> location
             if(sort[0] == 'location') sort[0] = 'place'
         } catch {
             sort = [];
         }
+        
+        console.log(req.nextUrl.searchParams.get("filter"))
+
+        let filters : EventFiltering = {};
+        try {
+            const filtersParams = req.nextUrl.searchParams.get("filter");
+            if (filtersParams) filters = JSON.parse(filtersParams);
+        } catch {
+            filters = {};
+        }
+
+
         const sorting = sort.length == 0 ? [] : [toSnakeCase(sort[0]), sort[1]];
 
-        const rangeParsed : number[] = range ? JSON.parse(range) : [0, 99];
-        const events : EventPagination = await findAllEvent(rangeParsed, sorting);
+        const rangeParsed : number[] = range ? JSON.parse(range) : [];
+        const events : EventPagination = await findAllEvent(rangeParsed, sorting, filters);
 
         const res =  NextResponse.json(
             events.events , {status: 200}
@@ -75,6 +84,8 @@ export async function GET(
         return res;
         
     } catch (err : any){
+        console.log(err.message)
+
         return NextResponse.json(
             {
                 error : err.message,
