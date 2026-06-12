@@ -34,7 +34,7 @@ export default async function EventsPage() {
     const events: Event[] = await fetchAllEvents();
 
     return (
-        <div className="w-screen min-h-screen flex flex-col p-3 items-center py-10 gap-5">
+        <div className="w-screen min-h-screen flex flex-col p-3 items-center py-10 gap-5 backdrop-blur-[3px]">
             <p className="text-3xl">Events</p>
 
             <div className="flex gap-5 w-4/5 justify-center flex-wrap border p-5">

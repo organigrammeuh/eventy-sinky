@@ -31,7 +31,7 @@ export default async function EventPage({ params }: EventProps) {
     const sessions: Session[] = await sessionRes.json();
 
     return (
-        <div className="w-screen h-screen">
+        <div className="w-screen h-screen backdrop-blur-[2px]">
             <div className="p-3 border-b">
                 <p className="text-2xl mb-2">{event.title}</p>
                 <p className="font-extralight">
