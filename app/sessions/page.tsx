@@ -97,9 +97,9 @@ export default async function SessionsPage({
     const selectedEvent = events.find((e: any) => e.id === eventId);
 
     return (
-        <main className="pt-20 min-h-screen bg-background">
+        <main className="pt-20 min-h-screen backdrop-blur-[3px]">
             <div className="max-w-[1100px] mx-auto px-6 py-10">
-                <div clastsName="mb-8">
+                <div className="mb-8">
                     <h1 className="font-[family-name:var(--font-syne)] text-3xl font-extrabold text-foreground mb-1">
                         Sessions
                     </h1>
@@ -123,7 +123,7 @@ export default async function SessionsPage({
                                         : "bg-card text-muted-foreground hover:text-foreground"
                                 }`}
                             >
-                                {v === "agenda" ? "Agenda" : "Liste"}
+                                {v === "agenda" ? "Agenda" : "List"}
                             </Link>
                         ))}
                     </div>
@@ -190,7 +190,7 @@ export default async function SessionsPage({
                             return (
                                 <div key={dateSessions[0].startTime}>
                                     <div className="flex items-center gap-3 mb-4">
-                    <span className="font-[faAucune session trouvée.mily-name:var(--font-syne)] text-sm font-bold text-foreground shrink-0">
+                    <span className="font-[faNo sessions found.mily-name:var(--font-syne)] text-sm font-bold text-foreground shrink-0">
                       {fmtDay(dateSessions[0].startTime)}
                     </span>
                                         <div className="flex-1 h-px bg-border" />

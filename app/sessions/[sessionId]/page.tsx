@@ -36,7 +36,7 @@ type Session = {
 };
 
 function fmt(d: string) {
-    return new Date(d).toLocaleTimeString("fr-FR", {
+    return new Date(d).toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
     });
@@ -141,14 +141,14 @@ function QuestionForm({
     return (
         <div className="flex flex-col gap-2 p-3 border rounded-lg bg-gray-50">
       <textarea
-          placeholder="Votre question *"
+          placeholder="Your question"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           className="border rounded p-2 text-sm resize-none"
           rows={2}
       />
             <input
-                placeholder="Votre nom (optionnel)"
+                placeholder="Your name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="border rounded p-2 text-sm"
@@ -158,13 +158,11 @@ function QuestionForm({
                 disabled={loading || !content.trim()}
                 className="bg-primary text-white rounded px-4 py-2 text-sm font-medium disabled:opacity-50 cursor-pointer"
             >
-                {loading ? "Envoi..." : "Poser la question"}
+                {loading ? "Sending..." : "Send"}
             </button>
         </div>
     );
 }
-
-// ─── Main page ───────────────────────────────────────────────────────────────
 
 export default function SessionDetailPage() {
     const params = useParams();
@@ -254,16 +252,16 @@ export default function SessionDetailPage() {
             <div className="pt-20 p-6 max-w-2xl mx-auto text-center text-gray-500">
                 Session introuvable.{" "}
                 <Link href="/sessions" className="text-primary underline">
-                    Retour aux sessions
+                    Go back to session
                 </Link>
             </div>
         );
     }
 
     return (
-        <div className="pt-20 min-h-screen">
+        <div className="pt-20 min-h-screen backdrop-blur-[3px]">
             <div className="max-w-2xl mx-auto p-6">
-                {/* Back link */}
+
                 <Link
                     href="/sessions"
                     className="text-sm text-muted-foreground no-underline mb-4 inline-block"
@@ -271,7 +269,6 @@ export default function SessionDetailPage() {
                     ← Sessions
                 </Link>
 
-                {/* Header */}
                 <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="flex-1">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -288,34 +285,31 @@ export default function SessionDetailPage() {
               <span>
                 {fmt(session.startTime)} – {fmt(session.endTime)}
               </span>
-                            {session.room && <span>📍 {session.room.name}</span>}
+                            {session.room && <span>{session.room.name}</span>}
                             {session.capacity && (
-                                <span>{session.capacity} places (informatif)</span>
+                                <span>{session.capacity} places</span>
                             )}
                         </div>
                     </div>
 
-                    {/* Favorite button */}
                     <button
                         onClick={handleToggleFavorite}
-                        title={isFavorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+                        title={isFavorite ? "Remove from favorite" : "Add to faverite"}
                         className="text-2xl cursor-pointer border-none bg-transparent"
                     >
                         {isFavorite ? "★" : "☆"}
                     </button>
                 </div>
 
-                {/* Description */}
                 {session.description && (
                     <p className="text-sm text-muted-foreground mb-6">
                         {session.description}
                     </p>
                 )}
 
-                {/* Speakers */}
                 {session.speakers && session.speakers.length > 0 && (
                     <div className="mb-6">
-                        <h2 className="text-base font-semibold mb-2">Intervenants</h2>
+                        <h2 className="text-base font-semibold mb-2">Speakers</h2>
                         <div className="flex flex-wrap gap-2">
                             {session.speakers.map((sp) => (
                                 <SpeakerChip key={sp.id} speaker={sp} />
@@ -324,7 +318,6 @@ export default function SessionDetailPage() {
                     </div>
                 )}
 
-                {/* Q&A — visible only when live */}
                 {session.isLive ? (
                     <div className="mt-6">
                         <h2 className="text-base font-semibold mb-3">
@@ -336,7 +329,7 @@ export default function SessionDetailPage() {
                         <div className="flex flex-col gap-2 mt-4">
                             {questions.length === 0 ? (
                                 <p className="text-sm text-muted-foreground">
-                                    Aucune question pour l'instant.
+                                    No questions.
                                 </p>
                             ) : (
                                 questions.map((q) => (
@@ -347,7 +340,7 @@ export default function SessionDetailPage() {
                     </div>
                 ) : (
                     <div className="mt-6 p-4 border rounded-lg bg-gray-50 text-sm text-muted-foreground">
-                        Les questions seront disponibles pendant la session.
+                        Questions will be available on the session.
                     </div>
                 )}
             </div>

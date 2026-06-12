@@ -45,7 +45,7 @@ export default async function SpeakerPage({ params }: SpeakerProps) {
     const speaker: Speaker = await speakerRes.json();
 
     return (
-        <div className="w-screen min-h-screen">
+        <div className="w-screen min-h-screen backdrop-blur-[2px]">
             {/* Header */}
             <div className="p-3 border-b flex gap-5 items-center">
                 {speaker.profilePicture ? (
