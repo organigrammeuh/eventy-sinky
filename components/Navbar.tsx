@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-const NAV_LINKS = ["Home", "Events", "Speakers", "Sessions", "Rooms"];
+const NAV_LINKS = [
+    { label: "Home", href: "/" },
+    { label: "Events", href: "/events" },
+    { label: "Sessions", href: "/sessions" },
+    { label: "Speakers", href: "/speakers" },
+    { label: "Rooms", href: "/rooms" },
+    { label: "Favorites", href: "/favorites" },
+];
 
 export function Navbar() {
     const [scrolled, setScrolled] = useState(false);
@@ -16,17 +23,24 @@ export function Navbar() {
     }, []);
 
     useEffect(() => {
-        const sync = () => setDark(document.documentElement.classList.contains("dark"));
+        const sync = () =>
+            setDark(document.documentElement.classList.contains("dark"));
         sync();
         const obs = new MutationObserver(sync);
-        obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+        obs.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ["class"],
+        });
         return () => obs.disconnect();
     }, []);
 
     return (
         <header
             className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none"
-            style={{ padding: scrolled ? "20px 24px" : "0", transition: "padding 0.4s ease" }}
+            style={{
+                padding: scrolled ? "20px 24px" : "0",
+                transition: "padding 0.4s ease",
+            }}
         >
             <nav
                 className="pointer-events-auto w-full flex items-center justify-between"
@@ -45,21 +59,21 @@ export function Navbar() {
                 <Link href="/" className="no-underline flex items-center gap-2">
           <span
               className="font-[family-name:var(--font-syne)] font-extrabold text-xl transition-colors duration-300"
-              style={{ color:"var(--primary)" }}
+              style={{ color: "var(--primary)" }}
           >
             EventSync
           </span>
                 </Link>
 
-                <div className="flex items-center gap-8">
+                <div className="flex items-center gap-6">
                     {NAV_LINKS.map((item) => (
                         <Link
-                            key={item}
-                            href={item === "Home" ? "/" : `/${item.toLowerCase()}`}
-                            className="text-base font-normal no-underline transition-colors duration-300 hover:opacity-100"
+                            key={item.label}
+                            href={item.href}
+                            className="text-sm font-normal no-underline transition-colors duration-300 hover:opacity-100"
                             style={{ color: "var(--muted-foreground)" }}
                         >
-                            {item}
+                            {item.label}
                         </Link>
                     ))}
                 </div>
@@ -68,7 +82,7 @@ export function Navbar() {
                     href="/admin"
                     className="text-sm font-semibold px-5 py-2 rounded-full no-underline transition-all duration-300"
                     style={{
-                        background: "var(--primary)" ,
+                        background: "var(--primary)",
                         color: "#fff",
                         border: "1px solid rgba(255,255,255,0.3)",
                     }}
