@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createEvent, findAllEvent } from "@/db/events";
 import { EventCreation, EventPagination } from "@/types/events";
+import { toSnakeCase } from "@/lib/params";
+import { toLowerCase } from "zod";
 
 export async function POST (
     req : NextRequest
@@ -45,10 +47,21 @@ export async function GET(
 
         const range = req.nextUrl.searchParams.get("range");
         const filter = req.nextUrl.searchParams.get("filter");
-        const sort : string[] = req.nextUrl.searchParams.get("sort")?.split(",") ?? [];
+        let sort : any = [];
+        try {
+            const sortParam = req.nextUrl.searchParams.get("sort");
+            if (sortParam) sort = JSON.parse(sortParam);
+            console.log(sort)
+
+            //TODO: migration => change in the db place -> location
+            if(sort[0] == 'location') sort[0] = 'place'
+        } catch {
+            sort = [];
+        }
+        const sorting = sort.length == 0 ? [] : [toSnakeCase(sort[0]), sort[1]];
 
         const rangeParsed : number[] = range ? JSON.parse(range) : [0, 99];
-        const events : EventPagination = await findAllEvent(rangeParsed);
+        const events : EventPagination = await findAllEvent(rangeParsed, sorting);
 
         const res =  NextResponse.json(
             events.events , {status: 200}

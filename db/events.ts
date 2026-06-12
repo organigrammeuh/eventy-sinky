@@ -38,12 +38,17 @@ export const createEvent = async (
 }
 
 export const findAllEvent = async(
-    range ?: number[]
+    range ?: number[],
+    sort ?: string[]
 ) : Promise<EventPagination> => {
 
-    const findEventsQuery = `
+    let findEventsQuery = `
         select id from event
     `;
+
+    if(sort){
+        findEventsQuery += ` order by ${sort[0]} ${sort[1]}`
+    }
 
     const events : Event[] = [];
 
