@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { pool } from "@/lib/db";
-import { Event, EventCreation } from "@/types/events";
-import { Session } from "@/types/sessions";
-import { Speaker } from "@/types/speakers";
 import { createEvent, findAllEvent } from "@/db/events";
-import { findSessionSpeaker } from "@/db/speakers";
+import { EventCreation, EventPagination } from "@/types/events";
 
 export async function POST (
     req : NextRequest
@@ -41,14 +37,29 @@ export async function POST (
     }
 }
 
-export async function GET(){
+export async function GET(
+    req: NextRequest
+){
     
     try{
-        const events : Event[] = await findAllEvent();
 
-        return NextResponse.json(
-            events , {status: 200}
+        const range = req.nextUrl.searchParams.get("range");
+        const filter = req.nextUrl.searchParams.get("filter");
+        const sort : string[] = req.nextUrl.searchParams.get("sort")?.split(",") ?? [];
+
+        const rangeParsed : number[] = range ? JSON.parse(range) : [0, 99];
+        const events : EventPagination = await findAllEvent(rangeParsed);
+
+        const res =  NextResponse.json(
+            events.events , {status: 200}
+        ) ;
+
+        res.headers.set(
+            "Content-Range",
+            `events ${rangeParsed[0]}-${rangeParsed[1]}/${events.total}`
         );
+
+        return res;
         
     } catch (err : any){
         return NextResponse.json(

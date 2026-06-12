@@ -1,4 +1,4 @@
-import { Event, EventCreation, EventUpdate } from "@/types/events";
+import { Event, EventCreation, EventPagination, EventUpdate } from "@/types/events";
 import { pool } from "@/lib/db";
 import { findEventSession } from "./session";
 import { AppError } from "@/lib/errors/AppError";
@@ -37,7 +37,10 @@ export const createEvent = async (
 
 }
 
-export const findAllEvent = async() : Promise<Event[]> => {
+export const findAllEvent = async(
+    range ?: number[]
+) : Promise<EventPagination> => {
+
     const findEventsQuery = `
         select id from event
     `;
@@ -46,12 +49,14 @@ export const findAllEvent = async() : Promise<Event[]> => {
 
     const {rows} = await pool.query(findEventsQuery);
 
-    for(const row of rows){
-        const event = await findEventById(row.id);
+    const toFind = range ? rows.slice(range[0], range[1] + 1) : rows;
+
+    for(const eventId of toFind){
+        const event = await findEventById(eventId.id);
         events.push(event);
     }
 
-    return events;
+    return {events, total : rows.length}
 }
 
 export const findEventById = async(

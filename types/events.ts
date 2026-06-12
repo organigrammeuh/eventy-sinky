@@ -20,3 +20,8 @@ export interface Event extends EventCreation {
     id: string,
     sessions ?: Session[]
 }
+
+export interface EventPagination {
+    events : Event[],
+    total : number
+}
