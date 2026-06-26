@@ -4,17 +4,6 @@ import { findSessionSpeaker } from "./speakers";
 import { AppError } from "@/lib/errors/AppError";
 import { getQuestionsBySession } from "./questions";
 
-// export const findAllSessions = async (): Promise<Session[]> => {
-//     const { rows } = await pool.query("SELECT id FROM session ORDER BY start_date ASC");
-//
-//     const sessions: Session[] = [];
-//     for (const row of rows) {
-//         const session = await findSessionById(row.id);
-//         sessions.push(session);
-//     }
-//     return sessions;
-// };
-
 export const findEventSession = async (eventId: string): Promise<Session[]> => {
     const { rows } = await pool.query(
         "SELECT id FROM session WHERE id_event = $1 ORDER BY start_date ASC",
