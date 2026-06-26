@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { EventFilter } from "@/components/EventFilter";
+import { FiClock, FiMapPin, FiActivity } from "react-icons/fi";
 
 type Speaker = { id: string; fullName: string };
 type Room = { id: string; name: string };
+type EventRef = { id: string; title: string };
 type Session = {
     id: string;
     title: string;
@@ -11,7 +13,7 @@ type Session = {
     endTime: string;
     room?: Room;
     speakers: Speaker[];
-    eventId?: string;
+    event?: EventRef;
     isLive?: boolean;
 };
 
@@ -38,7 +40,7 @@ async function fetchEvents() {
 }
 
 function fmt(d: string) {
-    return new Date(d).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    return new Date(d).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 function fmtDay(d: string) {
@@ -54,219 +56,132 @@ function getInitials(name: string) {
         .slice(0, 2);
 }
 
-function isLive(s: Session) {
-    const now = new Date();
-    return new Date(s.startTime) <= now && new Date(s.endTime) >= now;
-}
+type SearchParams = Promise<{ eventId?: string }>;
 
-function groupByDate(sessions: Session[]) {
-    const map = new Map<string, Session[]>();
-    for (const s of sessions) {
-        const key = new Date(s.startTime).toDateString();
-        if (!map.has(key)) map.set(key, []);
-        map.get(key)!.push(s);
-    }
-    return map;
-}
+export default async function SessionsPage({ searchParams }: { searchParams: SearchParams }) {
+    const params = await searchParams;
+    const selectedEventId = params.eventId;
 
-function groupByTime(sessions: Session[]) {
-    const map = new Map<string, Session[]>();
-    for (const s of sessions) {
-        const key = fmt(s.startTime);
-        if (!map.has(key)) map.set(key, []);
-        map.get(key)!.push(s);
-    }
-    return map;
-}
+    const [allSessions, events] = await Promise.all([
+        fetchSessions(),
+        fetchEvents(),
+    ]);
 
-export default async function SessionsPage({
-                                               searchParams,
-                                           }: {
-    searchParams: Promise<{ event?: string; view?: string }>;
-}) {
-    const { event: eventId = "all", view = "agenda" } = await searchParams;
+    const filteredSessions = selectedEventId && selectedEventId !== "all"
+        ? allSessions.filter((s) => s.event?.id === selectedEventId)
+        : allSessions;
 
-    const [sessions, events] = await Promise.all([fetchSessions(), fetchEvents()]);
+    const sortedSessions = [...filteredSessions].sort(
+        (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+    );
 
-    const filtered =
-        eventId === "all"
-            ? sessions
-            : sessions.filter((s) => s.eventId === eventId);
-
-    const byDate = groupByDate(filtered);
-    const selectedEvent = events.find((e: any) => e.id === eventId);
+    const groupedByDay = sortedSessions.reduce((acc, session) => {
+        const day = fmtDay(session.startTime);
+        if (!acc[day]) acc[day] = [];
+        acc[day].push(session);
+        return acc;
+    }, {} as Record<string, Session[]>);
 
     return (
-        <main className="pt-20 min-h-screen backdrop-blur-[3px]">
-            <div className="max-w-[1100px] mx-auto px-6 py-10">
-                <div className="mb-8">
-                    <h1 className="font-[family-name:var(--font-syne)] text-3xl font-extrabold text-foreground mb-1">
-                        Sessions
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        {filtered.length} session{filtered.length !== 1 ? "s" : ""}
-                        {selectedEvent ? ` · ${selectedEvent.title}` : " · all events"}
-                    </p>
-                </div>
+        <main className="w-screen mt-6 min-h-screen relative backdrop-blur-[2px] text-foreground px-6 py-16 md:px-16 lg:px-24">
+            <div className="absolute top-0 right-1/4 w-[600px] h-[500px] bg-primary/4 rounded-full blur-[150px] pointer-events-none" />
 
-                <div className="flex gap-3 flex-wrap items-center mb-8">
-                    <EventFilter events={events} currentEventId={eventId} />
+            <div className="max-w-4xl mx-auto relative z-10 flex flex-col gap-10">
 
-                    <div className="flex border border-border rounded-xl overflow-hidden">
-                        {(["agenda", "list"] as const).map((v) => (
-                            <Link
-                                key={v}
-                                href={`/sessions?event=${eventId}&view=${v}`}
-                                className={`px-5 py-2 text-xs font-semibold no-underline transition-colors duration-200 ${
-                                    view === v
-                                        ? "bg-primary text-primary-foreground"
-                                        : "bg-card text-muted-foreground hover:text-foreground"
-                                }`}
-                            >
-                                {v === "agenda" ? "Agenda" : "List"}
-                            </Link>
-                        ))}
+                <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-card-border/60 pb-6">
+                    <div>
+                        <h1 className="font-[family-name:var(--font-syne)] text-4xl gradient-brand-text font-extrabold tracking-tight">
+                            Schedule
+                        </h1>
                     </div>
-                </div>
+                    <div className="shrink-0">
+                        <EventFilter events={events} selectedEventId={selectedEventId} />
+                    </div>
+                </header>
 
-                {filtered.length === 0 ? (
-                    <div className="text-center py-20 text-muted-foreground">No sessions found.</div>
-                ) : view === "list" ? (
-                    <div className="flex flex-col gap-2.5">
-                        {filtered.map((s) => {
-                            const live = isLive(s);
-                            return (
-                                <Link key={s.id} href={`/sessions/${s.id}`} className="no-underline">
-                                    <div
-                                        className={`flex items-center gap-5 px-5 py-4 bg-card rounded-xl border transition-colors ${
-                                            live ? "border-primary" : "border-card-border"
-                                        }`}
-                                    >
-                                        <div className="text-right w-16 shrink-0">
-                                            <div className="text-xs font-bold text-primary">
-                                                {fmt(s.startTime)}
-                                            </div>
-                                            <div className="text-[11px] text-muted-foreground">
-                                                {fmt(s.endTime)}
-                                            </div>
-                                        </div>
-                                        <div className="w-px h-9 bg-border shrink-0" />
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                {live && (
-                                                    <span className="badge badge-primary">
-                            <span className="live-dot" />
-                            Live
-                          </span>
-                                                )}
-                                                <span className="font-semibold text-sm text-foreground">
-                          {s.title}
-                        </span>
-                                            </div>
-                                            <div className="text-[11px] text-muted-foreground mt-0.5">
-                                                {s.room?.name && (
-                                                    <span className="text-accent">{s.room.name}</span>
-                                                )}
-                                                {s.speakers.length > 0 && (
-                                                    <span>
-                            {s.room?.name ? " · " : ""}
-                                                        {s.speakers.map((sp) => sp.fullName).join(", ")}
-                          </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <span className="text-[11px] text-muted-foreground shrink-0">
-                      {fmtDay(s.startTime)}
-                    </span>
-                                    </div>
-                                </Link>
-                            );
-                        })}
+                {Object.keys(groupedByDay).length === 0 ? (
+                    <div className="glass rounded-2xl p-12 text-center border border-card-border/40 max-w-md mx-auto w-full">
+                        <FiActivity size={24} className="mx-auto text-muted-foreground/40 mb-3" />
+                        <p className="text-muted-foreground text-sm font-medium">No sessions scheduled for this selection.</p>
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-10">
-                        {Array.from(byDate.entries()).map(([, dateSessions]) => {
-                            const slots = groupByTime(dateSessions);
-                            return (
-                                <div key={dateSessions[0].startTime}>
-                                    <div className="flex items-center gap-3 mb-4">
-                    <span className="font-[faNo sessions found.mily-name:var(--font-syne)] text-sm font-bold text-foreground shrink-0">
-                      {fmtDay(dateSessions[0].startTime)}
-                    </span>
-                                        <div className="flex-1 h-px bg-border" />
-                                        <span className="text-xs text-muted-foreground shrink-0">
-                      {dateSessions.length} session
-                                            {dateSessions.length !== 1 ? "s" : ""}
-                    </span>
-                                    </div>
-                                    <div className="flex flex-col gap-2">
-                                        {Array.from(slots.entries()).map(([time, slotSessions]) => (
-                                            <div key={time} className="flex gap-4 items-start">
-                                                <div className="w-14 pt-3.5 shrink-0 text-right">
-                          <span className="text-xs font-bold text-primary">
-                            {time}
-                          </span>
-                                                </div>
-                                                <div className="flex-1 grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-2">
-                                                    {slotSessions.map((s) => {
-                                                        const live = isLive(s);
-                                                        return (
-                                                            <Link
-                                                                key={s.id}
-                                                                href={`/sessions/${s.id}`}
-                                                                className="no-underline"
-                                                            >
-                                                                <div
-                                                                    className="px-4 py-3 rounded-lg"
-                                                                    style={{
-                                                                        background: live
-                                                                            ? "var(--primary-muted)"
-                                                                            : "var(--card)",
-                                                                        border: `1px solid ${
-                                                                            live ? "var(--primary)" : "var(--card-border)"
-                                                                        }`,
-                                                                        borderLeft: `3px solid ${
-                                                                            live ? "var(--primary)" : "var(--accent)"
-                                                                        }`,
-                                                                    }}
-                                                                >
-                                                                    {live && (
-                                                                        <span className="badge badge-primary mb-1.5 block w-fit">
-                                      <span className="live-dot" />
-                                      Live
-                                    </span>
-                                                                    )}
-                                                                    <p className="font-semibold text-xs text-foreground mb-1 leading-snug">
-                                                                        {s.title}
-                                                                    </p>
-                                                                    <p className="text-[11px] text-muted-foreground">
-                                                                        {s.room?.name && `${s.room.name} · `}
-                                                                        {fmt(s.startTime)}–{fmt(s.endTime)}
-                                                                    </p>
-                                                                    {s.speakers.length > 0 && (
-                                                                        <div className="flex gap-1 mt-2">
-                                                                            {s.speakers.slice(0, 3).map((sp) => (
-                                                                                <div
-                                                                                    key={sp.id}
-                                                                                    title={sp.fullName}
-                                                                                    className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[8px] font-bold shrink-0"
-                                                                                >
-                                                                                    {getInitials(sp.fullName)}
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </Link>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
+                    <div className="flex flex-col gap-12">
+                        {Object.entries(groupedByDay).map(([day, daySessions]) => (
+                            <div key={day} className="flex flex-col gap-6">
+
+                                <div className="sticky top-4 z-20 self-start bg-muted/90 backdrop-blur-md text-[10px] font-black uppercase tracking-widest text-primary border border-primary/50 px-3 py-1 rounded-md shadow-sm">
+                                    {day}
                                 </div>
-                            );
-                        })}
+
+                                <div className="flex flex-col gap-4">
+                                    {daySessions.map((s) => (
+                                        <Link href={`/sessions/${s.id}`} key={s.id} className="no-underline group block w-full">
+                                            <div className="flex gap-4 items-start md:gap-6 w-full text-left">
+
+                                                <div className="w-16 pt-5 flex flex-col items-end gap-0.5 shrink-0 text-right">
+                                                    <span className="text-sm font-extrabold tracking-tight text-white/80 font-[family-name:var(--font-syne)]">
+                                                        {fmt(s.startTime)}
+                                                    </span>
+                                                    <span className="text-[10px] font-bold text-muted-foreground tracking-tight">
+                                                        {fmt(s.endTime)}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex-1 glass rounded-2xl p-5 border border-card-border/40 hover:border-primary/40 group-hover:translate-x-0.5 transition-all duration-300 shadow-sm relative overflow-hidden">
+
+                                                    {s.isLive && (
+                                                        <div className="absolute top-0 bottom-0 left-0 w-[3px] bg-live" />
+                                                    )}
+
+                                                    <div className="flex items-start justify-between gap-4 mb-2">
+                                                        <h3 className="font-[family-name:var(--font-syne)] text-lg font-extrabold text-foreground group-hover:text-primary transition-colors tracking-tight line-clamp-1">
+                                                            {s.title}
+                                                        </h3>
+
+                                                        {s.room && (
+                                                            <span className="text-[9px] font-black tracking-wider uppercase bg-muted/60 text-accent/90 border border-card-border px-2 py-0.5 rounded rounded-xl flex items-center gap-1 shrink-0">
+                                                                <FiMapPin size={9} />
+                                                                <span>{s.room.name}</span>
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed mb-4">
+                                                        {s.description || "No full track synopsis description detail details entered inside this schedule block entry segment."}
+                                                    </p>
+
+                                                    <div className="flex items-center justify-between gap-4 pt-3 border-t border-card-border">
+                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                                            <FiClock size={15} className="text-primary" />
+                                                            <span>Duration Block</span>
+                                                        </div>
+
+                                                        {s.speakers && s.speakers.length > 0 && (
+                                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                                <div className="flex -space-x-1.5 overflow-hidden">
+                                                                    {s.speakers.map((sp) => (
+                                                                        <div
+                                                                            key={sp.id}
+                                                                            title={sp.fullName}
+                                                                            className="w-7 h-7 rounded-full bg-primary-muted text-primary border border-primary flex items-center justify-center text-[12px] font-black shrink-0 ring-1 ring-card-border/30"
+                                                                        >
+                                                                            {getInitials(sp.fullName)}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
