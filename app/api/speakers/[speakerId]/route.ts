@@ -37,11 +37,13 @@ export async function PUT(
         if (toUpdate.profilePicture && toUpdate.profilePicture !== current.profilePicture) {
             await deleteImage(current.profilePicture);
         }
+
+        console.log(toUpdate)
         
         const speaker = await updateSpeaker(speakerId, toUpdate);
 
         return NextResponse.json(speaker, { status: 200 });
-    } catch (error: any) {
+    } catch (error : any) {
         return NextResponse.json(
             { message: error.message },
             { status: error.status || 500 },
