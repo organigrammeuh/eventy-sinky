@@ -1,5 +1,10 @@
 import { pool } from "@/lib/db";
-import { Session, SessionCreation, SessionFiltering, SessionPagination, SessionSorting } from "@/types/sessions";
+import {
+    Session,
+    SessionCreation,
+    SessionFiltering,
+    SessionPagination,
+} from "@/types/sessions";
 import { findSessionSpeaker } from "./speakers";
 import { AppError } from "@/lib/errors/AppError";
 import { getQuestionsBySession } from "./questions";
@@ -7,7 +12,7 @@ import { getQuestionsBySession } from "./questions";
 export const findEventSession = async (eventId: string): Promise<Session[]> => {
     const { rows } = await pool.query(
         "SELECT id FROM session WHERE id_event = $1 ORDER BY start_date ASC",
-        [eventId]
+        [eventId],
     );
 
     const eventSessions: Session[] = [];
@@ -22,7 +27,7 @@ export const findEventSession = async (eventId: string): Promise<Session[]> => {
 
 export const findSessionById = async (
     sessionId: string,
-    eventId?: string
+    eventId?: string,
 ): Promise<Session> => {
     let findSessionQuery = `
         SELECT
@@ -62,10 +67,11 @@ export const findSessionById = async (
         },
         startTime: session.start_date,
         title: session.title,
+        eventId: session.event_id,
         event: {
             id: session.event_id,
-            title: session.event_title
-        }
+            title: session.event_title,
+        },
     };
 
     fetchedSession.speakers = await findSessionSpeaker(session.id);
@@ -81,15 +87,14 @@ export const findSessionById = async (
 
 export const createEventSession = async (
     eventId: string,
-    toSave: SessionCreation
+    toSave: SessionCreation,
 ): Promise<Session> => {
     let roomId: string | null = null;
 
     if (toSave.room) {
-        const roomResult = await pool.query(
-            "SELECT id FROM room WHERE name = $1",
-            [toSave.room]
-        );
+        const roomResult = await pool.query("SELECT id FROM room WHERE name = $1", [
+            toSave.room,
+        ]);
         if (roomResult.rowCount === 0) {
             throw new AppError(`Room ${toSave.room} not found`, 404);
         }
@@ -119,15 +124,14 @@ export const createEventSession = async (
 export const updateSession = async (
     sessionId: string,
     eventId: string,
-    toUpdate: Partial<SessionCreation>
+    toUpdate: Partial<SessionCreation>,
 ): Promise<Session> => {
     let roomId: string | undefined;
 
     if (toUpdate.room) {
-        const roomResult = await pool.query(
-            "SELECT id FROM room WHERE name = $1",
-            [toUpdate.room]
-        );
+        const roomResult = await pool.query("SELECT id FROM room WHERE name = $1", [
+            toUpdate.room,
+        ]);
         if (roomResult.rowCount === 0) {
             throw new AppError(`Room ${toUpdate.room} not found`, 404);
         }
@@ -158,19 +162,14 @@ export const updateSession = async (
         eventId,
     ]);
 
-    return await findSessionById(
-        rows[0].id,
-        eventId
-    );
+    return await findSessionById(rows[0].id, eventId);
+};
 
-}
-
-export const findAllSessions = async(
+export const findAllSessions = async (
     range?: number[],
     filter?: SessionFiltering,
-    sort?: string[]
-) : Promise<SessionPagination> => {
-
+    sort?: string[],
+): Promise<SessionPagination> => {
     const conditions: string[] = [];
     const values: any[] = [];
 
@@ -191,26 +190,26 @@ export const findAllSessions = async(
         values.push(filter.end_date);
     }
 
-    let query = 'select session.id from session join event on session.id_event = event.id';
+    let query =
+        "select session.id from session join event on session.id_event = event.id";
     if (conditions.length > 0) {
-        query += ` where ${conditions.join(' and ')}`;
+        query += ` where ${conditions.join(" and ")}`;
     }
 
+    const allowedDirections = ["asc", "desc", "ASC", "DESC"];
 
-    const allowedDirections = ['asc', 'desc', 'ASC', 'DESC'];
-
-    if(sort){
-        if(sort[0] == 'event_title') sort[0] = 'event.title';
-        else if(sort[0] == 'title') sort[0] = 'session.title';
-        else if(sort[0] == 'endTime') sort[0] = 'session.end_date'
-        else if(sort[0] == 'startTime') sort[0] = 'session.start_date'
+    if (sort) {
+        if (sort[0] == "event_title") sort[0] = "event.title";
+        else if (sort[0] == "title") sort[0] = "session.title";
+        else if (sort[0] == "endTime") sort[0] = "session.end_date";
+        else if (sort[0] == "startTime") sort[0] = "session.start_date";
     }
 
-    if (sort && sort.length > 0 && allowedDirections.includes(sort[1]) ) {
+    if (sort && sort.length > 0 && allowedDirections.includes(sort[1])) {
         query += ` order by ${[sort[0]]} ${sort[1]}`;
     }
 
-    const {rows} = await pool.query(query, values);
+    const { rows } = await pool.query(query, values);
 
     const toFind = range?.length ? rows.slice(range[0], range[1] + 1) : rows;
 
@@ -219,5 +218,5 @@ export const findAllSessions = async(
         sessions.push(await findSessionById(row.id));
     }
 
-    return {sessions, total: rows.length};
-}
+    return { sessions, total: rows.length };
+};
