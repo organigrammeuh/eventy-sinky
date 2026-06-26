@@ -4,7 +4,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 type Event = { id: string; title: string };
 
-// Fixed prop name to match selectedEventId exactly
 export function EventFilter({ events, selectedEventId }: { events: Event[]; selectedEventId?: string }) {
     const router = useRouter();
     const searchParams = useSearchParams();

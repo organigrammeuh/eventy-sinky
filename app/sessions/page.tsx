@@ -4,6 +4,7 @@ import { FiClock, FiMapPin, FiActivity } from "react-icons/fi";
 
 type Speaker = { id: string; fullName: string };
 type Room = { id: string; name: string };
+type EventRef = { id: string; title: string };
 type Session = {
     id: string;
     title: string;
@@ -12,7 +13,7 @@ type Session = {
     endTime: string;
     room?: Room;
     speakers: Speaker[];
-    eventId?: string;
+    event?: EventRef;
     isLive?: boolean;
 };
 
@@ -60,10 +61,14 @@ type SearchParams = Promise<{ eventId?: string }>;
 export default async function SessionsPage({ searchParams }: { searchParams: SearchParams }) {
     const params = await searchParams;
     const selectedEventId = params.eventId;
-    const [allSessions, events] = await Promise.all([fetchSessions(), fetchEvents()]);
+
+    const [allSessions, events] = await Promise.all([
+        fetchSessions(),
+        fetchEvents(),
+    ]);
 
     const filteredSessions = selectedEventId && selectedEventId !== "all"
-        ? allSessions.filter((s) => s.eventId === selectedEventId)
+        ? allSessions.filter((s) => s.event?.id === selectedEventId)
         : allSessions;
 
     const sortedSessions = [...filteredSessions].sort(
