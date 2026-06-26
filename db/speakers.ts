@@ -143,26 +143,30 @@ export const updateSpeaker = async(
     updateData : SpeakerUpdate
 ) : Promise<Speaker> => {
 
-    let query = 'update speaker set';
-    let params : string[] = [];
+    const setClauses: string[] = [];
+    const params: string[] = [];
 
-    if(updateData.bio){
+    if (updateData.bio) {
         params.push(updateData.bio);
-        query += ` biography = ${params.length}`
+        setClauses.push(`biography = $${params.length}`);
     }
 
-    if(updateData.fullName){
+    if (updateData.fullName) {
         params.push(updateData.fullName);
-        query += ` full_name = ${params.length}`
+        setClauses.push(`full_name = $${params.length}`);
     }
 
-    if(updateData.profilePicture){
+    if (updateData.profilePicture) {
         params.push(updateData.profilePicture);
-        query += ` profile_picture_url = ${params.length}`
+        setClauses.push(`profile_picture_url = $${params.length}`);
+    }
+
+    if (setClauses.length === 0) {
+        throw new AppError("No fields to update", 400);
     }
 
     params.push(speakerId);
-    query += ' where id = ' + params.length;
+    const query = `UPDATE speaker SET ${setClauses.join(", ")} WHERE id = $${params.length}`;
 
     await pool.query(query, params);
 
