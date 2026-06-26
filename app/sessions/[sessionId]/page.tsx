@@ -36,7 +36,11 @@ type Session = {
     isLive?: boolean;
 };
 
-function fmt(d: string) {
+function fmtDate(d: string) {
+    return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function fmtTime(d: string) {
     return new Date(d).toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
@@ -127,7 +131,7 @@ export default function SessionDetailPage() {
                     (a, b) => b.upvotes - a.upvotes
                 )
             );
-        } catch {}
+        } catch { }
     };
 
     const handleSubmitQuestion = async (e: React.FormEvent) => {
@@ -359,7 +363,7 @@ export default function SessionDetailPage() {
                                 <FiClock size={14} className="text-primary shrink-0" />
                                 <div className="min-w-0">
                                     <p className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-wider leading-none mb-0.5">Time</p>
-                                    <p className="text-xs font-black tracking-tight truncate">{fmt(session.startTime)} - {fmt(session.endTime)}</p>
+                                    <p className="text-xs font-black tracking-tight truncate">{fmtDate(session.startTime)} · {fmtTime(session.startTime)} - {fmtTime(session.endTime)}</p>
                                 </div>
                             </div>
 
