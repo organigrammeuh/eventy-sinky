@@ -37,8 +37,6 @@ export async function PUT(
         if (toUpdate.profilePicture && toUpdate.profilePicture !== current.profilePicture) {
             await deleteImage(current.profilePicture);
         }
-
-        console.log(toUpdate)
         
         const speaker = await updateSpeaker(speakerId, toUpdate);
 

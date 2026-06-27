@@ -11,7 +11,6 @@ export async function GET(req: NextRequest) {
         try {
             const sortParam = req.nextUrl.searchParams.get("sort");
             if (sortParam) sort = JSON.parse(sortParam);
-            console.log(sort);
         } catch {
             sort = [];
         }
