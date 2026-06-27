@@ -1,6 +1,7 @@
 import { createRoom, findAllRooms } from "@/db/room";
 import { RoomCreation, RoomFiltering } from "@/types/room";
 import { toSnakeCase } from "@/lib/params";
+
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -43,7 +44,6 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// get all room with range
 export async function GET(req: NextRequest) {
     try {
         const range = req.nextUrl.searchParams.get("range");
@@ -77,6 +77,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(
             { error: err.message, message: "Error when fetching rooms" },
             { status: 500 }
+
         );
     }
 }

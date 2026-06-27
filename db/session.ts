@@ -223,7 +223,6 @@ export const findAllSessions = async (
 
     return { sessions, total: rows.length };
 };
-
 export const deleteSession = async (
     sessionId : string
 ) => {

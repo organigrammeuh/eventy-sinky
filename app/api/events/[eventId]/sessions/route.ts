@@ -39,8 +39,7 @@ export async function POST(
         
         const { eventId } = await params;
         const toSave: SessionCreation = await req.json();
-        console.log(toSave)
-    
+
         await findEventById(eventId);
     
         if (!toSave.title || !toSave.startTime || !toSave.endTime) {

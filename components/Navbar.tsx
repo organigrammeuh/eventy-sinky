@@ -82,6 +82,7 @@ export function Navbar() {
 
                 <Link
                     href={ADMIN_URL!}
+
                     className="text-sm font-semibold px-5 py-2 rounded-full no-underline transition-all duration-300"
                     style={{
                         background: "var(--primary)",
