@@ -223,3 +223,23 @@ export const findAllSessions = async (
 
     return { sessions, total: rows.length };
 };
+
+export const deleteSession = async (
+    sessionId : string
+) => {
+
+    await pool.query(
+        'DELETE FROM session_speaker WHERE id_session = $1',
+        [sessionId]
+    );
+
+    await pool.query(
+        'DELETE FROM question WHERE id_session = $1',
+        [sessionId]
+    )
+        
+    await pool.query(
+        'DELETE FROM session WHERE id = $1',
+        [sessionId]
+    )
+}
