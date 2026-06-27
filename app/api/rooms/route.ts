@@ -1,56 +1,66 @@
-import { pool } from "@/lib/db";
-import { Room, RoomCreation } from "@/lib/types";
+import { createRoom, findAllRooms } from "@/db/room";
+import { RoomCreation } from "@/types/room";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(
-    req : NextRequest
-){
-    
-    const body : RoomCreation = await req.json();
+export async function POST(req: NextRequest) {
+    try {
+        let body: RoomCreation = { name: "" };
 
-    const createRoomReq = `
-        INSERT INTO room
-            (name)
-        VALUES ($1)
-        RETURNING id;
-    ` 
-
-    const createRoomResult = await pool.query(createRoomReq , [body.name]);
-
-    const createdRoom : Room = {
-        id: createRoomResult.rows[0].id,
-        name : body.name
-    };
-
-    return NextResponse.json(
-        createdRoom, {
-            status: 201
+        try {
+            body = await req.json();
+            if (
+                Object.keys(body).length == 0 ||
+                !Object.keys(body).includes("name")
+            ) {
+                throw new Error("Missing body");
+            }
+        } catch {
+            return NextResponse.json(
+                {
+                    message: "Please provide a name in the request body",
+                },
+                {
+                    status: 400,
+                },
+            );
         }
-    )
+
+        const createdRoom = await createRoom(body.name);
+
+        return NextResponse.json(createdRoom, {
+            status: 201,
+        });
+    } catch (err: any) {
+        return NextResponse.json(
+            {
+                message: err.message,
+            },
+            {
+                status: err.status || 500,
+            },
+        );
+    }
 }
 
+// get all room with range
+export async function GET() {
+    try {
+        const rooms = await findAllRooms();
 
-export async function GET(){
-    
-    const findRoomReq = `
-        SELECT id, name
-        FROM room
-    `;
-
-    let rooms : Room[]= [];
-
-    const findRoomRes = await pool.query(findRoomReq);
-
-    for(const room of findRoomRes.rows){
-        rooms.push({
-            id: room.id,
-            name: room.name
-        })
-    };
-
-    return NextResponse.json(
-        rooms, {
-            status: 200
-        }
-    )
+        return NextResponse.json(rooms, {
+            status: 200,
+            headers: {
+                "Content-Range": `items 0-${rooms.length - 1}/${rooms.length}`,
+            },
+        });
+    } catch (err: any) {
+        return NextResponse.json(
+            {
+                message: err.message,
+            },
+            {
+                status: err.status || 500,
+            },
+        );
+    }
 }

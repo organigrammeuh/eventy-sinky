@@ -3,7 +3,7 @@ info:
   title: EventSync API
   description: |
     API for the EventSync platform - Real-time event management and participant engagement.
-    
+
     **Roles:**
     - **Admin (Organizer)**: Full CRUD on events, sessions, speakers (requires authentication)
     - **Public (Participant)**: Read events, sessions, submit/upvote questions during live sessions, manage personal favorites (local storage)
@@ -57,19 +57,19 @@ components:
         location:
           type: string
           example: "Hôtel Carlton, Antananarivo"
-        
+
     Event:
       allOf:
-        - $ref: '#/components/schemas/EventCreation'
+        - $ref: "#/components/schemas/EventCreation"
         - type: object
           properties:
-            id: 
+            id:
               type: string
               format: uuid
             sessions:
               type: array
               items:
-                $ref: '#/components/schemas/SessionCreation'
+                $ref: "#/components/schemas/SessionCreation"
 
     SessionCreation:
       type: object
@@ -98,10 +98,10 @@ components:
 
     Session:
       allOf:
-        - $ref: '#/components/schemas/SessionCreation'
+        - $ref: "#/components/schemas/SessionCreation"
         - type: object
           properties:
-            id: 
+            id:
               type: string
               format: uuid
             eventId:
@@ -110,11 +110,11 @@ components:
             speakers:
               type: array
               items:
-                $ref: '#/components/schemas/Speaker'
+                $ref: "#/components/schemas/Speaker"
             question:
               type: array
               items:
-                $ref: '#/components/schemas/Question'
+                $ref: "#/components/schemas/Question"
 
     SpeakerCreation:
       type: object
@@ -133,90 +133,16 @@ components:
           items:
             type: string
 
-    RegisterRequest:
-      type: object
-      required:
-        - email
-        - password
-        - fullName
-      properties:
-        fullName:
-          type: string
-          example: "Rakoto Andriantsoa"
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-          minLength: 8
-
-    LoginRequest:
-      type: object
-      required:
-        - email
-        - password
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-
-    RefreshRequest:
-      type: object
-      required:
-        - refreshToken
-      properties:
-        refreshToken:
-          type: string
-
-    AuthResponse:
-      type: object
-      properties:
-        accessToken:
-          type: string
-          description: Short-lived JWT (e.g. 15 min)
-        refreshToken:
-          type: string
-          description: Long-lived token for renewal (e.g. 7 days)
-        organizer:
-          $ref: '#/components/schemas/User'
-
-    User:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        email:
-          type: string
-          format: email
-        fullName:
-          type: string
-          example: "Rakoto Andriantsoa"
-        avatarUrl:
-          type: string
-          format: uri
-          description: Profile picture (auto-filled from Google/GitHub on OAuth)
-        authProvider:
-          type: string
-          enum: [local, google, github]
-        createdAt:
-          type: string
-          format: date-time
-
-    Speaker: 
+    Speaker:
       allOf:
-        - $ref: '#/components/schemas/SpeakerCreation'
+        - $ref: "#/components/schemas/SpeakerCreation"
         - type: object
           properties:
-            id: 
+            id:
               type: string
               format: uuid
             sessions:
-              $ref: '#/components/schemas/Session'
+              $ref: "#/components/schemas/Session"
 
     RoomCreation:
       type: object
@@ -229,7 +155,7 @@ components:
 
     Room:
       allOf:
-        - $ref: '#/components/schemas/RoomCreation'
+        - $ref: "#/components/schemas/RoomCreation"
         - type: object
           properties:
             id:
@@ -255,9 +181,9 @@ components:
           type: string
           format: date-time
 
-    Question: 
+    Question:
       allOf:
-        - $ref: '#/components/schemas/QuestionCreation'
+        - $ref: "#/components/schemas/QuestionCreation"
         - type: object
           properties:
             id:
@@ -267,7 +193,6 @@ components:
               type: integer
               default: 0
 paths:
-
   # ====================== EVENTS ======================
   /events:
     get:
@@ -276,14 +201,14 @@ paths:
       summary: List all events
       description: Public endpoint - Get list of all published events
       responses:
-        '200':
+        "200":
           description: List of events
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Event'
+                  $ref: "#/components/schemas/Event"
 
     post:
       tags:
@@ -296,14 +221,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EventCreation'
+              $ref: "#/components/schemas/EventCreation"
       responses:
-        '201':
+        "201":
           description: Event created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Event'
+                $ref: "#/components/schemas/Event"
 
   /events/{eventId}:
     get:
@@ -318,12 +243,12 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Event details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Event'
+                $ref: "#/components/schemas/Event"
 
     put:
       tags:
@@ -343,9 +268,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EventCreation'
+              $ref: "#/components/schemas/EventCreation"
       responses:
-        '200':
+        "200":
           description: Event updated
 
     delete:
@@ -362,10 +287,40 @@ paths:
             type: string
             format: uuid
       responses:
-        '204':
+        "204":
           description: Event deleted
 
   # ====================== SESSIONS ======================
+  /sessions:
+    get:
+      tags:
+        - Sessions
+      summary: Get all sessions
+      description: Public endpoint - Returns all sessions across all events
+      parameters:
+        - name: eventId
+          in: query
+          required: false
+          description: Filter sessions by event
+          schema:
+            type: string
+            format: uuid
+        - name: speakerId
+          in: query
+          required: false
+          description: Filter sessions by speaker
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: List of all sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Session"
   /events/{eventId}/sessions:
     get:
       tags:
@@ -379,14 +334,14 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: List of sessions
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Session'
+                  $ref: "#/components/schemas/Session"
 
     post:
       tags:
@@ -406,9 +361,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SessionCreation'
+              $ref: "#/components/schemas/SessionCreation"
       responses:
-        '201':
+        "201":
           description: Session created
 
   /events/{eventId}/sessions/{sessionId}:
@@ -436,20 +391,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SessionCreation'
+              $ref: "#/components/schemas/SessionCreation"
       responses:
-        '200':
+        "200":
           description: Session updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Session'
-        '404':
+                $ref: "#/components/schemas/Session"
+        "404":
           description: Session not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /sessions/{sessionId}:
     get:
@@ -464,12 +419,12 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Session details including speakers and questions section
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Session'
+                $ref: "#/components/schemas/Session"
 
   /events/{eventId}/sessions/{sessionId}/speakers/{speakerId}/associate:
     patch:
@@ -498,20 +453,20 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Speaker associated successfully
-        '404':
+        "404":
           description: Session or speaker not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '409':
+                $ref: "#/components/schemas/Error"
+        "409":
           description: Speaker already associated to this session
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /events/{eventId}/sessions/{sessionId}/speakers/{speakerId}/dissociate:
     patch:
@@ -540,20 +495,20 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Speaker dissociated successfully
-        '404':
+        "404":
           description: Session or speaker not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '409':
+                $ref: "#/components/schemas/Error"
+        "409":
           description: Speaker not associated to this session
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   # ====================== LIVE SESSIONS & QUESTIONS ======================
   /sessions/{sessionId}/questions:
@@ -569,14 +524,14 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: List of questions
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Question'
+                  $ref: "#/components/schemas/Question"
 
     post:
       tags:
@@ -594,9 +549,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/QuestionCreation'
+              $ref: "#/components/schemas/QuestionCreation"
       responses:
-        '201':
+        "201":
           description: Question submitted successfully
 
   /questions/{questionId}/upvote:
@@ -612,7 +567,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Upvote registered
 
   # ====================== SPEAKERS ======================
@@ -622,14 +577,14 @@ paths:
         - Speakers
       summary: List all speakers
       responses:
-        '200':
+        "200":
           description: List of speakers
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Speaker'
+                  $ref: "#/components/schemas/Speaker"
 
     post:
       tags:
@@ -642,14 +597,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SpeakerCreation'
+              $ref: "#/components/schemas/SpeakerCreation"
       responses:
-        '201':
+        "201":
           description: Speaker created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Speaker'
+                $ref: "#/components/schemas/Speaker"
 
   /speakers/{speakerId}:
     get:
@@ -664,12 +619,12 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Speaker profile with associated sessions
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Speaker'
+                $ref: "#/components/schemas/Speaker"
 
     put:
       tags:
@@ -689,20 +644,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SpeakerCreation'
+              $ref: "#/components/schemas/SpeakerCreation"
       responses:
-        '200':
+        "200":
           description: Speaker updated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Speaker'
-        '404':
+                $ref: "#/components/schemas/Speaker"
+        "404":
           description: Speaker not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
     delete:
       tags:
@@ -718,30 +673,35 @@ paths:
             type: string
             format: uuid
       responses:
-        '204':
+        "204":
           description: Speaker deleted
-        '404':
+        "404":
           description: Speaker not found
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
-  # ====================== ROOMS ======================
+  # ROOMS
   /rooms:
     get:
       tags:
         - Rooms
       summary: List all rooms
       responses:
-        '200':
+        "200":
           description: List of rooms
+          headers:
+            Content-Range:
+              schema:
+                type: string
+              description: "Required by react-admin simple rest data provider. Format: items 0-{count-1}/{count}"
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Room'
+                  $ref: "#/components/schemas/Room"
 
     post:
       tags:
@@ -754,14 +714,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RoomCreation'
+              $ref: "#/components/schemas/RoomCreation"
       responses:
-        '201':
+        "201":
           description: Room created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Room'
+                $ref: "#/components/schemas/Room"
 
   /rooms/{roomId}/sessions:
     get:
@@ -776,176 +736,14 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: List of sessions in the room
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Session'
-                  
-  /auth/register:
-    post:
-      tags:
-        - Auth
-      summary: Register a new organizer account
-      description: Creates an organizer account. Returns 409 if email already exists.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterRequest'
-      responses:
-        '201':
-          description: Account created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '409':
-          description: Email already in use
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /auth/login:
-    post:
-      tags:
-        - Auth
-      summary: Log in as organizer
-      description: Returns a short-lived access token and a longer-lived refresh token.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginRequest'
-      responses:
-        '200':
-          description: Login successful
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /auth/logout:
-    post:
-      tags:
-        - Auth
-      summary: Log out (invalidate current token)
-      security:
-        - BearerAuth: []
-      responses:
-        '204':
-          description: Logged out successfully
-        '401':
-          description: Missing or invalid token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /auth/refresh:
-    post:
-      tags:
-        - Auth
-      summary: Refresh access token
-      description: Exchange a valid refresh token for a new access token.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RefreshRequest'
-      responses:
-        '200':
-          description: New access token issued
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          description: Refresh token invalid or expired
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-  
-  /auth/{provider}/redirect:
-    get:
-      tags:
-        - Auth
-      summary: Initiate OAuth login (Google or GitHub)
-      description: >
-        Redirects the browser to the provider's authorization page.
-        `provider` must be `google` or `github`.
-      parameters:
-        - name: provider
-          in: path
-          required: true
-          schema:
-            type: string
-            enum: [google, github]
-      responses:
-        '302':
-          description: Redirect to provider authorization URL
-        '400':
-          description: Unknown provider
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /auth/{provider}/callback:
-    get:
-      tags:
-        - Auth
-      summary: OAuth callback — exchange code for EventSync JWT
-      description: >
-        Called by the provider after user consent.
-        The backend exchanges the `code` for a provider token,
-        fetches the user profile, upserts the organizer account,
-        and returns EventSync JWT tokens.
-      parameters:
-        - name: provider
-          in: path
-          required: true
-          schema:
-            type: string
-            enum: [google, github]
-        - name: code
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: state
-          in: query
-          required: false
-          description: CSRF protection state parameter
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Authentication successful
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthResponse'
-        '401':
-          description: OAuth code invalid or expired
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+                  $ref: "#/components/schemas/Session"
 tags:
   - name: Events
     description: Public event consultation

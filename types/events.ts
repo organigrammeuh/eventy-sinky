@@ -1,0 +1,35 @@
+import { StringFormatParams } from "zod/v4/core"
+import { Session } from "./sessions"
+
+export interface EventCreation {
+    title : string,
+    description : string,
+    startDate : Date,
+    endDate : Date,
+    location : string
+};
+
+export interface EventUpdate {
+    title ?: string,
+    description ?: string,
+    startDate ?: Date,
+    endDate ?: Date,
+    location ?: string
+};
+
+export interface Event extends EventCreation {
+    id: string,
+    sessions ?: Session[]
+}
+
+export interface EventPagination {
+    events : Event[],
+    total : number
+}
+
+export interface EventFiltering {
+    title ?: string,
+    location ?: string,
+    start_date ?: string,
+    end_date ?: string
+}
