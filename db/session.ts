@@ -91,14 +91,17 @@ export const createEventSession = async (
 ): Promise<Session> => {
     let roomId: string | null = null;
 
-    if (toSave.room) {
+
+    if (toSave.room && !toSave.id_room) {
         const roomResult = await pool.query("SELECT id FROM room WHERE name = $1", [
-            toSave.room,
+            toSave.room.name,
         ]);
         if (roomResult.rowCount === 0) {
-            throw new AppError(`Room ${toSave.room} not found`, 404);
+            throw new AppError(`Room ${toSave.room.name} not found`, 404);
         }
         roomId = roomResult.rows[0].id;
+    } else if(toSave.id_room){
+        roomId = toSave.id_room;
     }
 
     const query = `
