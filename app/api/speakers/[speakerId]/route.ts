@@ -1,6 +1,7 @@
 import { deleteSpeaker, findSpeakerById, updateSpeaker } from "@/db/speakers";
-import { SpeakerUpdate } from "@/types/speakers";
+import { SpeakerCreation } from "@/types/speakers";
 import { NextRequest, NextResponse } from "next/server";
+import { deleteImage } from "@/lib/image";
 
 export async function GET(
     _req: NextRequest,
@@ -29,11 +30,18 @@ export async function PUT(
 ) {
     try {
         const { speakerId } = await params;
-        const toUpdate: SpeakerUpdate = await req.json();
+        
+        const toUpdate: SpeakerCreation = await req.json();
+        
+        const current = await findSpeakerById(speakerId);
+        if (toUpdate.profilePicture && toUpdate.profilePicture !== current.profilePicture) {
+            await deleteImage(current.profilePicture);
+        }
+        
         const speaker = await updateSpeaker(speakerId, toUpdate);
 
         return NextResponse.json(speaker, { status: 200 });
-    } catch (error: any) {
+    } catch (error : any) {
         return NextResponse.json(
             { message: error.message },
             { status: error.status || 500 },
@@ -47,11 +55,17 @@ export async function DELETE(
 ) {
     try {
         const { speakerId } = await params;
+        
+        const speaker = await findSpeakerById(speakerId);
 
-        await findSpeakerById(speakerId);
         await deleteSpeaker(speakerId);
-        return new NextResponse(null, { status: 204 });
-    } catch (error: any) {
+
+        await deleteImage(speaker.profilePicture);
+
+        return new NextResponse( null, { status: 204 });
+
+    } catch (error : any) {
+
         return NextResponse.json(
             { message: error.message },
             { status: error.status || 500 },

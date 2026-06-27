@@ -58,8 +58,6 @@ export async function GET(
             sort = [];
         }
         
-        console.log(req.nextUrl.searchParams.get("filter"))
-
         let filters : EventFiltering = {};
         try {
             const filtersParams = req.nextUrl.searchParams.get("filter");
@@ -91,7 +89,6 @@ export async function GET(
         return res;
         
     } catch (err : any){
-        console.log(err.message)
 
         return NextResponse.json(
             {
