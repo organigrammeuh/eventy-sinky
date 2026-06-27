@@ -21,7 +21,7 @@ export default async function SpeakersPage() {
             <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-accent/4 rounded-full blur-[130px] pointer-events-none" />
 
             <div className="max-w-6xl mx-auto relative z-10 text-center">
-                <div className="mb-12 flex flex-col items-center gap-2 border-b border-card-border/340 pb-6">
+                <div className="mb-12 flex flex-col items-center gap-2 border-b border-card-border/40 pb-6">
 
                     <h1 className="font-[family-name:var(--font-syne)] text-5xl md:text-5xl font-extrabold tracking-tight gradient-brand-text mt-2">
                         Meet all our speakers
