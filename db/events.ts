@@ -1,7 +1,8 @@
 import { Event, EventCreation, EventFiltering, EventPagination, EventUpdate } from "@/types/events";
 import { pool } from "@/lib/db";
-import { findEventSession } from "./session";
+import { deleteSession, findEventSession } from "./session";
 import { AppError } from "@/lib/errors/AppError";
+import { Session } from "@/types/sessions";
 
 export const createEvent = async (
     toSave : EventCreation
@@ -189,6 +190,10 @@ export const updateEvent = async(
 export const deleteEvent = async(
     eventId : string
 ) : Promise<void> => {
+    const sessions : Session[] = await findEventSession(eventId);
+    for(const session of sessions){
+        await deleteSession(session.id);
+    }
     const deleteQuery = 'DELETE FROM event WHERE id = $1';
     await pool.query(deleteQuery, [eventId]);
 }

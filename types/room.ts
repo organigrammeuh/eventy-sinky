@@ -11,3 +11,12 @@ export interface Room extends RoomCreation {
 export interface RoomSessions extends Room {
     sessions : Session[]
 }
+
+export interface RoomPagination {
+    rooms: Room[],
+    total: number
+}
+
+export interface RoomFiltering {
+    name?: string
+}

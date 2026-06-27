@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+const ADMIN_URL = process.env.ADMIN_URL || 'http://localhost:5173';
+
 const NAV_LINKS = [
     { label: "Home", href: "/" },
     { label: "Events", href: "/events" },
@@ -79,7 +81,8 @@ export function Navbar() {
                 </div>
 
                 <Link
-                    href="/admin"
+                    href={ADMIN_URL!}
+
                     className="text-sm font-semibold px-5 py-2 rounded-full no-underline transition-all duration-300"
                     style={{
                         background: "var(--primary)",
