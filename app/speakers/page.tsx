@@ -1,94 +1,47 @@
-import { Speaker } from "@/lib/types";
-import Link from "next/link";
-import ExpandableText from "@/components/ExpandableText";
+import { SpeakerCard, SpeakerCardData } from "@/components/Speaker/SpeakerCard";
 
-const fetchAllSpeakers = async (): Promise<Speaker[]> => {
-    const res = await fetch("http://localhost:3000/api/speakers");
-    const rawSpeakers = await res.json();
-    return rawSpeakers;
-};
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
-const getLinkLabel = (link: string) => {
+const fetchAllSpeakers = async (): Promise<SpeakerCardData[]> => {
     try {
-        return new URL(link).hostname;
+        const res = await fetch(`${BASE_URL}/api/speakers`, { cache: "no-store" });
+        if (!res.ok) return [];
+        return await res.json();
     } catch {
-        return link;
+        return [];
     }
 };
 
-const getInitials = (fullName: string) => {
-    return fullName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
-};
-
 export default async function SpeakersPage() {
-    const speakers: Speaker[] = await fetchAllSpeakers();
+    const speakers = await fetchAllSpeakers();
 
     return (
-        <div className="w-screen min-h-screen backdrop-blur-[2px] flex flex-col p-3 items-center py-10 gap-5">
-            <p className="text-3xl">Speakers</p>
-            <p className="text-2xl">Meet the people behind the sessions</p>
+        <div className="w-screen min-h-screen relative top-3 backdrop-blur-[2px] text-foreground px-4 py-16 md:px-12 lg:px-20 overflow-hidden">
+            <div className="absolute top-0 right-1/4 w-[600px] h-[500px] bg-primary/4 rounded-full blur-[150px] pointer-events-none" />
+            <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-accent/4 rounded-full blur-[130px] pointer-events-none" />
 
-            <div className="flex flex-wrap gap-5 w-4/5 justify-center border p-5">
-                {speakers.map((speaker) => (
-                    <div
-                        key={speaker.id}
-                        className="flex flex-col gap-3 rounded-2xl border p-5 w-64"
-                    >
-                        {/* Avatar */}
-                        <div className="flex justify-center">
-                            {speaker.profilePicture ? (
-                                <img
-                                    src={speaker.profilePicture}
-                                    alt={speaker.fullName}
-                                    className="w-20 h-20 rounded-full object-cover border"
-                                />
-                            ) : (
-                                <div className="w-20 h-20 rounded-full border flex items-center justify-center bg-gray-100 text-xl font-bold text-gray-500">
-                                    {getInitials(speaker.fullName)}
-                                </div>
-                            )}
-                        </div>
+            <div className="max-w-6xl mx-auto relative z-10 text-center">
+                <div className="mb-12 flex flex-col items-center gap-2 border-b border-card-border/60 pb-6">
 
-                        <p className="font-bold text-xl text-center">{speaker.fullName}</p>
+                    <h1 className="font-[family-name:var(--font-syne)] text-5xl md:text-5xl font-extrabold tracking-tight gradient-brand-text mt-2">
+                        Meet all our speakers
+                    </h1>
+                    <p className="text-sm text-white max-w-md leading-relaxed mt-1">
+                        Here are the incredible people behind our sessions
+                    </p>
+                </div>
 
-                        {speaker.bio && (
-                            <ExpandableText text={speaker.bio} />
-                        )}
-
-                        <hr />
-
-                        <p className="text-sm text-gray-500">
-                            {speaker.sessions?.length ?? 0} session(s)
-                        </p>
-
-                        {speaker.socialLinks && speaker.socialLinks.length > 0 && (
-                            <div className="flex flex-wrap gap-1">
-                                {speaker.socialLinks.map((link, i) => (
-                                    <a
-                                        key={i}
-                                        href={link}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-blue-500 text-xs underline truncate max-w-full"
-                                    >
-                                        {getLinkLabel(link)}
-                                    </a>
-                                ))}
-                            </div>
-                        )}
-
-                        <Link href={`/speakers/${speaker.id}`}>
-                            <button className="bg-green-300 p-2 rounded-2xl cursor-pointer w-full">
-                                View profile
-                            </button>
-                        </Link>
+                {speakers.length === 0 ? (
+                    <div className="glass rounded-3xl p-12 text-center border border-card-border/30 max-w-md mx-auto">
+                        <p className="text-sm text-white">No speaker found.</p>
                     </div>
-                ))}
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 items-stretch">
+                        {speakers.map((speaker) => (
+                            <SpeakerCard key={speaker.id} speaker={speaker} />
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );
