@@ -8,7 +8,8 @@ export interface SessionCreation {
     startTime : Date,
     endTime : Date,
     room : Room,
-    capacity: number
+    capacity: number,
+    id_room?: string,
 }
 
 export interface Session extends SessionCreation {
