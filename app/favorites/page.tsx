@@ -100,7 +100,7 @@ export default function FavoritesPage() {
                         <h1 className="font-[family-name:var(--font-syne)] mt-4 text-3xl md:text-4xl font-extrabold tracking-tight gradient-brand-text mt-1">
                             Saved Sessions
                         </h1>
-                        <p className="text-sm text-muted-foreground/90 max-w-md">
+                        <p className="text-sm text-white/60 max-w-md">
                             Your personalized sequence of events saved locally to your current workspace browser.
                         </p>
                     </div>
