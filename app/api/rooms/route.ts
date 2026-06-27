@@ -1,5 +1,6 @@
 import { createRoom, findAllRooms } from "@/db/room";
-import { RoomCreation } from "@/types/room";
+import { RoomCreation, RoomFiltering } from "@/types/room";
+import { toSnakeCase } from "@/lib/params";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -43,24 +44,39 @@ export async function POST(req: NextRequest) {
 }
 
 // get all room with range
-export async function GET() {
+export async function GET(req: NextRequest) {
     try {
-        const rooms = await findAllRooms();
+        const range = req.nextUrl.searchParams.get("range");
+        let sort: any = [];
+        try {
+            const sortParam = req.nextUrl.searchParams.get("sort");
+            if (sortParam) sort = JSON.parse(sortParam);
+        } catch {
+            sort = [];
+        }
 
-        return NextResponse.json(rooms, {
-            status: 200,
-            headers: {
-                "Content-Range": `items 0-${rooms.length - 1}/${rooms.length}`,
-            },
-        });
+        let filters: RoomFiltering = {};
+        try {
+            const filtersParams = req.nextUrl.searchParams.get("filter");
+            if (filtersParams) filters = JSON.parse(filtersParams);
+        } catch {
+            filters = {};
+        }
+
+        const sorting = sort.length == 0 ? [] : [toSnakeCase(sort[0]), sort[1]];
+        const rangeParsed: number[] = range ? JSON.parse(range) : [];
+        const result = await findAllRooms(rangeParsed, filters, sorting);
+
+        const res = NextResponse.json(result.rooms, { status: 200 });
+        res.headers.set(
+            "Content-Range",
+            `rooms ${rangeParsed[0]}-${rangeParsed[1]}/${result.total}`
+        );
+        return res;
     } catch (err: any) {
         return NextResponse.json(
-            {
-                message: err.message,
-            },
-            {
-                status: err.status || 500,
-            },
+            { error: err.message, message: "Error when fetching rooms" },
+            { status: 500 }
         );
     }
 }

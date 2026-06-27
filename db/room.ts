@@ -1,7 +1,7 @@
 import { Session } from "@/types/sessions";
 import { findEventById } from "./events";
 import { findEventSession, findSessionById } from "./session";
-import { Room, RoomSessions } from "@/types/room";
+import { Room, RoomFiltering, RoomPagination, RoomSessions } from "@/types/room";
 import { pool } from "@/lib/db";
 import { AppError } from "@/lib/errors/AppError";
 
@@ -67,9 +67,39 @@ export const findSessionsByRoomId = async (roomId: string): Promise<Session[]> =
 
 }
 
-export const findAllRooms = async () : Promise<Room[]> => {
-    const {rows} = await pool.query('select id, name from room');
-    return rows as Room[];
+export const findAllRooms = async (
+    range?: number[],
+    filter?: RoomFiltering,
+    sort?: string[]
+): Promise<RoomPagination> => {
+    const conditions: string[] = [];
+    const values: any[] = [];
+
+    if (filter?.name) {
+        conditions.push(`name ilike $${values.length + 1}`);
+        values.push(`%${filter.name}%`);
+    }
+
+    let query = 'select id from room';
+    if (conditions.length > 0) {
+        query += ` where ${conditions.join(' and ')}`;
+    }
+
+    const allowedDirections = ['asc', 'desc', 'ASC', 'DESC'];
+    if (sort && sort.length > 0 && allowedDirections.includes(sort[1])) {
+        query += ` order by ${sort[0]} ${sort[1]}`;
+    }
+
+    const { rows } = await pool.query(query, values);
+    const toFind = range?.length ? rows.slice(range[0], range[1] + 1) : rows;
+
+    const rooms: Room[] = [];
+    for (const row of toFind) {
+        const room = await findRoomById(row.id);
+        rooms.push(room);
+    }
+
+    return { rooms, total: rows.length };
 }
 
 export const createRoom = async(
@@ -90,3 +120,21 @@ export const createRoom = async(
         name : name
     };
 }
+
+export const updateRoom = async (roomId: string, name: string): Promise<Room> => {
+    const { rows } = await pool.query(
+        'UPDATE room SET name = $1 WHERE id = $2 RETURNING id, name',
+        [name, roomId]
+    );
+    if (rows.length === 0) {
+        throw new AppError(`Room with id={${roomId}} not found.`, 404);
+    }
+    return rows[0] as Room;
+};
+
+export const deleteRoom = async (roomId: string): Promise<void> => {
+    const { rowCount } = await pool.query('DELETE FROM room WHERE id = $1', [roomId]);
+    if (rowCount === 0) {
+        throw new AppError(`Room with id={${roomId}} not found.`, 404);
+    }
+};
