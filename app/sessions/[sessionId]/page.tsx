@@ -132,6 +132,8 @@ export default function SessionDetailPage() {
 
     useEffect(() => {
         fetchSession();
+        const interval = setInterval(fetchSession, 60_000);
+        return () => clearInterval(interval);
     }, [fetchSession]);
 
     const handleUpvote = async (questionId: string) => {
