@@ -251,7 +251,6 @@ export default function SessionDetailPage() {
                             </h2>
                         </div>
 
-                        {session.isLive ? (
                             <div className="flex flex-col gap-4">
                                 <form onSubmit={handleSubmitQuestion} className="glass rounded-2xl p-4 border border-card-border/50 bg-muted/30 flex flex-col gap-3">
                                     <textarea
@@ -260,7 +259,8 @@ export default function SessionDetailPage() {
                                         placeholder="Ask a question..."
                                         value={newQuestionContent}
                                         onChange={(e) => setNewQuestionContent(e.target.value)}
-                                        className="w-full bg-background/50 border border-card-border/60 rounded-xl p-3 text-xs outline-none focus:border-primary/50 text-foreground placeholder:text-muted-foreground/60 resize-none transition-colors text-left"
+                                        disabled={!session.isLive}
+                                        className="w-full bg-background/50 border border-card-border/60 rounded-xl p-3 text-xs outline-none focus:border-primary/50 text-foreground placeholder:text-muted-foreground/60 resize-none transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
                                     <div className="flex flex-col gap-3">
                                         <input
@@ -268,11 +268,12 @@ export default function SessionDetailPage() {
                                             placeholder="Your Name (Optional)"
                                             value={newQuestionName}
                                             onChange={(e) => setNewQuestionName(e.target.value)}
-                                            className="bg-background/50 border border-card-border/60 rounded-xl px-3 py-2 text-xs outline-none focus:border-primary/50 text-foreground placeholder:text-muted-foreground/60 transition-colors w-full text-left"
+                                            disabled={!session.isLive}
+                                            className="bg-background/50 border border-card-border/60 rounded-xl px-3 py-2 text-xs outline-none focus:border-primary/50 text-foreground placeholder:text-muted-foreground/60 transition-colors w-full text-left disabled:opacity-50 disabled:cursor-not-allowed"
                                         />
                                         <button
                                             type="submit"
-                                            disabled={submittingQuestion || !newQuestionContent.trim()}
+                                            disabled={submittingQuestion || !newQuestionContent.trim() || !session.isLive}
                                             className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-4 py-2 rounded-xl transition-all disabled:opacity-40 cursor-pointer flex items-center justify-center gap-1.5 w-full shadow-sm"
                                         >
                                             {submittingQuestion ? "Sending..." : "Send"}
@@ -310,11 +311,6 @@ export default function SessionDetailPage() {
                                     )}
                                 </div>
                             </div>
-                        ) : (
-                            <div className="glass rounded-2xl p-6 text-center border border-card-border text-muted-foreground text-sm font-medium bg-muted/20">
-                                Questions will be available when this session goes live.
-                            </div>
-                        )}
                     </div>
                 </div>
 
