@@ -301,9 +301,14 @@ export default function SessionDetailPage() {
 
                                                 <button
                                                     onClick={() => handleUpvote(q.id)}
-                                                    className="inline-flex items-center gap-1.5 bg-muted/60 hover:bg-primary/10 border border-card-border/40 hover:border-primary/30 rounded-xl px-2.5 py-1.5 transition-all text-muted-foreground hover:text-primary cursor-pointer group"
+                                                    disabled={!session.isLive}
+                                                    className={`inline-flex items-center gap-1.5 bg-muted/60 border rounded-xl px-2.5 py-1.5 transition-all text-muted-foreground ${
+                                                        session.isLive
+                                                            ? "hover:bg-primary/10 border-card-border/40 hover:border-primary/30 hover:text-primary cursor-pointer group"
+                                                            : "opacity-40 cursor-not-allowed border-card-border/20"
+                                                    }`}
                                                 >
-                                                    <FiTrendingUp size={12} className="group-hover:-translate-y-0.5 transition-transform" />
+                                                    <FiTrendingUp size={12} className="transition-transform" />
                                                     <span className="text-[10px] font-black">{q.upvotes}</span>
                                                 </button>
                                             </div>
