@@ -79,6 +79,19 @@ function toggleFavorite(sessionId: string): boolean {
     }
 }
 
+function getUpvotedIds(): string[] {
+    try { return JSON.parse(localStorage.getItem("eventsync_upvotes") ?? "[]"); }
+    catch { return []; }
+}
+
+function markUpvoted(questionId: string) {
+    const ids = getUpvotedIds();
+    if (!ids.includes(questionId)) {
+        ids.push(questionId);
+        localStorage.setItem("eventsync_upvotes", JSON.stringify(ids));
+    }
+}
+
 export default function SessionDetailPage() {
     const params = useParams();
     const sessionId = params?.sessionId as string;
@@ -87,6 +100,7 @@ export default function SessionDetailPage() {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFavorite, setIsFavorite] = useState(false);
+    const [upvotedIds, setUpvotedIds] = useState<string[]>([]);
 
     const [newQuestionContent, setNewQuestionContent] = useState("");
     const [newQuestionName, setNewQuestionName] = useState("");
@@ -95,6 +109,7 @@ export default function SessionDetailPage() {
     useEffect(() => {
         if (sessionId) {
             setIsFavorite(getFavorites().includes(sessionId));
+            setUpvotedIds(getUpvotedIds());
         }
     }, [sessionId]);
 
@@ -120,12 +135,15 @@ export default function SessionDetailPage() {
     }, [fetchSession]);
 
     const handleUpvote = async (questionId: string) => {
+        if (upvotedIds.includes(questionId)) return;
         try {
             const res = await fetch(`/api/questions/${questionId}/upvote`, {
                 method: "POST",
             });
             if (!res.ok) return;
             const updated = await res.json();
+            markUpvoted(questionId);
+            setUpvotedIds((prev) => [...prev, questionId]);
             setQuestions((prev) =>
                 [...prev.map((q) => (q.id === questionId ? updated : q))].sort(
                     (a, b) => b.upvotes - a.upvotes
@@ -301,14 +319,16 @@ export default function SessionDetailPage() {
 
                                                 <button
                                                     onClick={() => handleUpvote(q.id)}
-                                                    disabled={!session.isLive}
-                                                    className={`inline-flex items-center gap-1.5 bg-muted/60 border rounded-xl px-2.5 py-1.5 transition-all text-muted-foreground ${
-                                                        session.isLive
-                                                            ? "hover:bg-primary/10 border-card-border/40 hover:border-primary/30 hover:text-primary cursor-pointer group"
-                                                            : "opacity-40 cursor-not-allowed border-card-border/20"
+                                                    disabled={!session.isLive || upvotedIds.includes(q.id)}
+                                                    className={`inline-flex items-center gap-1.5 border rounded-xl px-2.5 py-1.5 transition-all text-muted-foreground ${
+                                                        upvotedIds.includes(q.id)
+                                                            ? "bg-primary/15 border-primary/40 text-primary cursor-default"
+                                                            : session.isLive
+                                                                ? "bg-muted/60 border-card-border/40 hover:bg-primary/10 hover:border-primary/30 hover:text-primary cursor-pointer"
+                                                                : "bg-muted/60 opacity-40 cursor-not-allowed border-card-border/20"
                                                     }`}
                                                 >
-                                                    <FiTrendingUp size={12} className="transition-transform" />
+                                                    <FiTrendingUp size={12} />
                                                     <span className="text-[10px] font-black">{q.upvotes}</span>
                                                 </button>
                                             </div>
