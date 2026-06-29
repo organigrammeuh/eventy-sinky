@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FiArrowLeft, FiClock, FiMapPin, FiCalendar, FiVideo, FiArrowUpRight } from "react-icons/fi";
+import { FiArrowLeft, FiMapPin, FiVideo, FiArrowUpRight, FiActivity } from "react-icons/fi";
 import { FaLinkedin, FaTwitter, FaGithub, FaGlobe } from "react-icons/fa6";
 import { Speaker } from "@/types/speakers";
 
@@ -35,6 +35,11 @@ const getSocialIcon = (link: string) => {
     return <FaGlobe size={18} className="text-accent" />;
 };
 
+function checkIsLive(startTime: string, endTime: string): boolean {
+    const now = new Date();
+    return new Date(startTime) <= now && new Date(endTime) >= now;
+}
+
 export default async function SpeakerProfilePage({ params }: SpeakerProps) {
     const { speakerId } = await params;
 
@@ -54,6 +59,14 @@ export default async function SpeakerProfilePage({ params }: SpeakerProps) {
     }
 
     const speaker: Speaker = await speakerRes.json();
+
+    const sortedSessions = speaker.sessions ? [...speaker.sessions].sort((a: any, b: any) => {
+        const aLive = checkIsLive(a.startTime, a.endTime);
+        const bLive = checkIsLive(b.startTime, b.endTime);
+        if (aLive && !bLive) return -1;
+        if (!aLive && bLive) return 1;
+        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+    }) : [];
 
     return (
         <div className="w-screen min-h-screen relative mt-8 backdrop-blur-[2px] text-foreground px-4 py-12 md:px-12 lg:px-20 overflow-hidden">
@@ -137,30 +150,45 @@ export default async function SpeakerProfilePage({ params }: SpeakerProps) {
                         </h2>
                     </div>
 
-                    {speaker.sessions && speaker.sessions.length > 0 ? (
-                        <div className="relative border-l border-card-border/40 py-5 pl-6 ml-3 space-y-8 py-2 bg-card/70 rounded-tr-2xl rounded-b-2xl">
-                            {speaker.sessions.map((session: any) => {
+                    {sortedSessions.length > 0 ? (
+                        <div className="relative border-l border-card-border/40 py-5 pl-6 ml-3 space-y-8 bg-card/70 rounded-tr-2xl rounded-b-2xl">
+                            {sortedSessions.map((session: any) => {
                                 const { day, time } = formatSessionDateTime(session.startTime);
+                                const isLive = checkIsLive(session.startTime, session.endTime);
+
                                 return (
                                     <div key={session.id} className="relative group">
-                                        <div className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-background border-2 border-primary group-hover:bg-primary transition-colors duration-300 ring-4 ring-background" />
+                                        <div className={`absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-background border-2 transition-colors duration-300 ring-4 ring-background ${
+                                            isLive
+                                                ? "border-live bg-live"
+                                                : "border-primary group-hover:bg-primary"
+                                        }`} />
 
                                         <div className="flex flex-col gap-1.5">
                                             <div className="flex flex-wrap items-center gap-2 text-[10px] font-black tracking-tight text-muted-foreground/70 uppercase">
-                                                <span className="text-primary font-bold">{day}</span>
-                                                <span className="text-muted-foreground/50">•</span>
-                                                <span>{time}</span>
+                                                {isLive ? (
+                                                    <span className="text-live font-black inline-flex items-center gap-1 bg-card/30 border border-live/20 px-1.5 py-0.5 rounded ">
+                                                        <FiActivity size={10} />
+                                                        LIVE NOW
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-primary font-bold">{day}</span>
+                                                )}
+                                                <span className="text-live/50">•</span>
+                                                <span className={isLive ? "text-primary/90 font-bold" : ""}>{time}</span>
                                             </div>
 
                                             <Link href={`/sessions/${session.id}`} className="no-underline block max-w-xl">
-                                                <h3 className="font-[family-name:var(--font-syne)] text-base/50 font-bold tracking-tight text-foreground group-hover:text-primary transition-colors inline-flex items-center gap-1.5 leading-snug">
+                                                <h3 className={`font-[family-name:var(--font-syne)] text-base font-bold tracking-tight text-foreground transition-colors inline-flex items-center gap-1.5 leading-snug ${
+                                                    isLive ? "group-hover:text-live" : "group-hover:text-primary"
+                                                }`}>
                                                     <span>{session.title}</span>
-                                                    <FiArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity text-primary shrink-0" />
+                                                    <FiArrowUpRight size={14} className={`transition-opacity shrink-0 ${isLive ? "opacity-0 group-hover:opacity-100 text-live" : " text-primary opacity-0 group-hover:opacity-100"}`} />
                                                 </h3>
                                             </Link>
 
                                             {session.room?.name && (
-                                                <span className="inline-flex items-center gap-1 text-[12px] mt-2 font-bold text-accent bg-accent-muted border border-accent/10 px-2 py-0.5 rounded-md self-start">
+                                                <span className={`inline-flex items-center gap-1 text-[12px] mt-2 font-bold px-2 py-0.5 rounded-md self-start border text-accent bg-accent-muted border border-accent/10`}>
                                                     <FiMapPin size={9} /> {session.room.name}
                                                 </span>
                                             )}
