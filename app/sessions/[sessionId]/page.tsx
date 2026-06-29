@@ -79,6 +79,19 @@ function toggleFavorite(sessionId: string): boolean {
     }
 }
 
+function getUpvotedIds(): string[] {
+    try { return JSON.parse(localStorage.getItem("eventsync_upvotes") ?? "[]"); }
+    catch { return []; }
+}
+
+function markUpvoted(questionId: string) {
+    const ids = getUpvotedIds();
+    if (!ids.includes(questionId)) {
+        ids.push(questionId);
+        localStorage.setItem("eventsync_upvotes", JSON.stringify(ids));
+    }
+}
+
 export default function SessionDetailPage() {
     const params = useParams();
     const sessionId = params?.sessionId as string;
@@ -87,27 +100,20 @@ export default function SessionDetailPage() {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFavorite, setIsFavorite] = useState(false);
+    const [upvotedIds, setUpvotedIds] = useState<string[]>([]);
 
-    const [questionContent, setQuestionContent] = useState("");
-    const [visitorName, setVisitorName] = useState("");
+    const [newQuestionContent, setNewQuestionContent] = useState("");
+    const [newQuestionName, setNewQuestionName] = useState("");
     const [submittingQuestion, setSubmittingQuestion] = useState(false);
-
-    const checkIsLive = (start: string, end: string): boolean => {
-        const now = new Date();
-        return new Date(start) <= now && new Date(end) >= now;
-    };
-
-    const checkIsPast = (end: string): boolean => {
-        return new Date(end) < new Date();
-    };
 
     useEffect(() => {
         if (sessionId) {
             setIsFavorite(getFavorites().includes(sessionId));
+            setUpvotedIds(getUpvotedIds());
         }
     }, [sessionId]);
 
-    const fetchSessionData = useCallback(async () => {
+    const fetchSession = useCallback(async () => {
         if (!sessionId) return;
         try {
             const res = await fetch(`/api/sessions/${sessionId}`);
@@ -125,44 +131,47 @@ export default function SessionDetailPage() {
     }, [sessionId]);
 
     useEffect(() => {
-        fetchSessionData();
-    }, [fetchSessionData]);
+        fetchSession();
+        const interval = setInterval(fetchSession, 60_000);
+        return () => clearInterval(interval);
+    }, [fetchSession]);
 
     const handleUpvote = async (questionId: string) => {
+        if (upvotedIds.includes(questionId)) return;
         try {
             const res = await fetch(`/api/questions/${questionId}/upvote`, {
                 method: "POST",
             });
             if (!res.ok) return;
             const updated = await res.json();
+            markUpvoted(questionId);
+            setUpvotedIds((prev) => [...prev, questionId]);
             setQuestions((prev) =>
                 [...prev.map((q) => (q.id === questionId ? updated : q))].sort(
                     (a, b) => b.upvotes - a.upvotes
                 )
             );
-        } catch {}
+        } catch { }
     };
 
-    const handleCreateQuestion = async (e: React.FormEvent) => {
+    const handleSubmitQuestion = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!sessionId || !questionContent.trim() || submittingQuestion) return;
-
+        if (!sessionId || !newQuestionContent.trim()) return;
         setSubmittingQuestion(true);
         try {
             const res = await fetch(`/api/sessions/${sessionId}/questions`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    content: questionContent.trim(),
-                    name: visitorName.trim() || undefined
-                })
+                    content: newQuestionContent.trim(),
+                    name: newQuestionName.trim() || undefined
+                }),
             });
-
             if (res.ok) {
                 const newQ = await res.json();
                 setQuestions((prev) => [newQ, ...prev].sort((a, b) => b.upvotes - a.upvotes));
-                setQuestionContent("");
-                setVisitorName("");
+                setNewQuestionContent("");
+                setNewQuestionName("");
             }
         } catch {} finally {
             setSubmittingQuestion(false);
@@ -181,16 +190,13 @@ export default function SessionDetailPage() {
     if (!session) {
         return (
             <div className="w-screen min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-6">
-                <p className="text-muted-foreground text-sm mb-4">The selected timeline segment could not be mapped.</p>
+                <p className="text-muted-foreground text-sm mb-4">Session could not be located.</p>
                 <Link href="/sessions" className="text-xs font-bold text-primary flex items-center gap-2 no-underline">
                     <FiArrowLeft /> Back to directory
                 </Link>
             </div>
         );
     }
-
-    const live = checkIsLive(session.startTime, session.endTime);
-    const past = checkIsPast(session.endTime);
 
     return (
         <div className="w-screen min-h-screen relative mt-8 backdrop-blur-[2px] text-foreground px-4 py-12 md:px-12 lg:px-20 overflow-hidden">
@@ -225,12 +231,12 @@ export default function SessionDetailPage() {
 
                     <div className="lg:col-span-7 flex flex-col gap-6">
                         <div className={`rounded-[32px] p-6 md:p-8 border relative overflow-hidden ${
-                            live ? "border-live/70 bg-card/80" : "border-card-border/40 bg-card/60"
+                            session.isLive ? "border-live/70 bg-card/80" : "border-card-border/40 bg-card/60"
                         }`}>
                             <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
 
                             <div className="flex items-center gap-2 mb-4">
-                                {live && (
+                                {session.isLive && (
                                     <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-white bg-live border border-live px-2 py-0.5 rounded-md shadow-sm mr-1">
                                         <FiActivity size={10} /> Live Now
                                     </span>
@@ -340,52 +346,43 @@ export default function SessionDetailPage() {
                                 </div>
                             </div>
 
-                            {live ? (
-                                <form onSubmit={handleCreateQuestion} className="bg-background/40 border border-card-border/40 rounded-2xl p-3.5 flex flex-col gap-2.5">
-                                    <div className="flex gap-2">
-                                        <div className="w-6 h-6 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">
-                                            <FiZap size={11} />
-                                        </div>
-                                        <textarea
-                                            required
-                                            value={questionContent}
-                                            onChange={(e) => setQuestionContent(e.target.value)}
-                                            placeholder="Ask an anonymous or named public question..."
-                                            rows={2}
-                                            className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none resize-none border-0 p-0 leading-snug"
-                                            maxLength={300}
-                                        />
+                            <form onSubmit={handleSubmitQuestion} className="bg-background/40 border border-card-border/40 rounded-2xl p-3.5 flex flex-col gap-2.5">
+                                <div className="flex gap-2">
+                                    <div className="w-6 h-6 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">
+                                        <FiZap size={11} />
                                     </div>
-
-                                    <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-card-border/20 flex-wrap sm:flex-nowrap">
-                                        <input
-                                            type="text"
-                                            value={visitorName}
-                                            onChange={(e) => setVisitorName(e.target.value)}
-                                            placeholder="Your name (Optional)"
-                                            className="bg-background/50 border border-card-border/30 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary/40 placeholder:text-muted-foreground/40 w-full sm:max-w-[150px]"
-                                            maxLength={40}
-                                        />
-
-                                        <button
-                                            type="submit"
-                                            disabled={!questionContent.trim() || submittingQuestion}
-                                            className="bg-primary hover:bg-primary/80 disabled:bg-muted/30 disabled:text-muted-foreground/40 text-primary-foreground text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all cursor-pointer shadow-sm disabled:cursor-not-allowed shrink-0 w-full sm:w-auto"
-                                        >
-                                            {submittingQuestion ? "Sending..." : "Submit"}
-                                        </button>
-                                    </div>
-                                </form>
-                            ) : (
-                                <div className="bg-background/20 border border-card-border/20 rounded-xl p-3 text-center">
-                                    <p className="text-[11px] font-medium text-muted-foreground/60 leading-relaxed">
-                                        {past
-                                            ? "This track event has concluded. Question entries are closed but lines remain visible."
-                                            : "This track event has not yet started. Questions will open once the segment goes live."
-                                        }
-                                    </p>
+                                    <textarea
+                                        required
+                                        value={newQuestionContent}
+                                        onChange={(e) => setNewQuestionContent(e.target.value)}
+                                        placeholder="Ask an anonymous or named public question..."
+                                        disabled={!session.isLive}
+                                        rows={2}
+                                        className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none resize-none border-0 p-0 leading-snug disabled:opacity-50 disabled:cursor-not-allowed"
+                                        maxLength={300}
+                                    />
                                 </div>
-                            )}
+
+                                <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-card-border/20 flex-wrap sm:flex-nowrap">
+                                    <input
+                                        type="text"
+                                        value={newQuestionName}
+                                        onChange={(e) => setNewQuestionName(e.target.value)}
+                                        placeholder="Your name (Optional)"
+                                        disabled={!session.isLive}
+                                        className="bg-background/50 border border-card-border/30 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-primary/40 placeholder:text-muted-foreground/40 w-full sm:max-w-[150px] disabled:opacity-50 disabled:cursor-not-allowed"
+                                        maxLength={40}
+                                    />
+
+                                    <button
+                                        type="submit"
+                                        disabled={submittingQuestion || !newQuestionContent.trim() || !session.isLive}
+                                        className="bg-primary hover:bg-primary/80 disabled:bg-muted/30 disabled:text-muted-foreground/40 text-primary-foreground text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all cursor-pointer shadow-sm disabled:cursor-not-allowed shrink-0 w-full sm:w-auto"
+                                    >
+                                        {submittingQuestion ? "Sending..." : "Submit"}
+                                    </button>
+                                </div>
+                            </form>
 
                             {questions.length > 0 ? (
                                 <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
@@ -402,16 +399,18 @@ export default function SessionDetailPage() {
 
                                             <button
                                                 type="button"
-                                                onClick={() => live && handleUpvote(q.id)}
-                                                disabled={!live}
-                                                title={live ? "Upvote this query" : "Voting is closed"}
+                                                onClick={() => handleUpvote(q.id)}
+                                                disabled={!session.isLive || upvotedIds.includes(q.id)}
+                                                title={upvotedIds.includes(q.id) ? "Already upvoted" : session.isLive ? "Upvote this query" : "Voting is closed"}
                                                 className={`h-7 px-2 rounded-lg border transition-all flex items-center gap-1.5 shrink-0 ${
-                                                    live
-                                                        ? "bg-muted/40 border-card-border/50 text-muted-foreground hover:text-primary hover:border-primary/30 cursor-pointer shadow-sm group"
-                                                        : "bg-muted/10 border-transparent text-muted-foreground/40 cursor-not-allowed"
+                                                    upvotedIds.includes(q.id)
+                                                        ? "bg-primary/15 border-primary/40 text-primary cursor-default shadow-sm"
+                                                        : session.isLive
+                                                            ? "bg-muted/40 border-card-border/50 text-muted-foreground hover:text-primary hover:border-primary/30 cursor-pointer shadow-sm group"
+                                                            : "bg-muted/10 border-transparent text-muted-foreground/40 cursor-not-allowed"
                                                 }`}
                                             >
-                                                <FiTrendingUp size={11} className={live ? "text-primary group-hover:-translate-y-0.5 transition-transform" : ""} />
+                                                <FiTrendingUp size={11} className={session.isLive && !upvotedIds.includes(q.id) ? "text-primary group-hover:-translate-y-0.5 transition-transform" : ""} />
                                                 <span className="text-[10px] font-black">{q.upvotes}</span>
                                             </button>
                                         </div>
