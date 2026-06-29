@@ -38,20 +38,46 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        let body: SpeakerRequestCreation | null = null;
-        try {
-            body = await req.json();
-            if (!body?.fullName?.trim()) throw new Error("Missing fullName");
-        } catch {
+        const formData = await req.formData();
+        
+        const fullName = formData.get("fullName") as string | null;
+        const biography = formData.get("biography") as string | null;
+        const profilePicture = formData.get("profilePicture") as File | null;
+        const linksJson = formData.get("links") as string | null;
+
+        if (!fullName || !fullName.trim()) {
             return NextResponse.json(
-                { message: "Body invalide ou champ fullName manquant" },
+                { message: "Invalid body or missing full name" },
                 { status: 400 }
             );
         }
 
-        const speakerRequest = await createSpeakerRequest(body);
+        let parsedLinks = [];
+        if (linksJson) {
+            try {
+                parsedLinks = JSON.parse(linksJson);
+            } catch {
+                return NextResponse.json(
+                    { message: "Invalid links format" },
+                    { status: 400 }
+                );
+            }
+        }
+
+        const speakerData = {
+            fullName: fullName.trim(),
+            biography: biography?.trim() || null,
+            profilePicture: profilePicture || null, 
+            links: parsedLinks,
+        };
+
+        const speakerRequest = await createSpeakerRequest(speakerData);
+        
         return NextResponse.json(speakerRequest, { status: 201 });
     } catch (error: any) {
-        return NextResponse.json({ message: error.message }, { status: error.status || 500 });
+        return NextResponse.json(
+            { message: error.message || "Internal server error" }, 
+            { status: error.status || 500 }
+        );
     }
 }
