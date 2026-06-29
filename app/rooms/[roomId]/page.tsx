@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { FiArrowLeft, FiClock, FiCalendar, FiUser, FiLayers, FiRadio } from "react-icons/fi";
+import { FiArrowLeft, FiClock, FiCalendar, FiUser, FiLayers, FiRadio, FiMapPin } from "react-icons/fi";
 
 type Speaker = { id: string; fullName: string };
-type Room = { id: string; name: string };
+type RoomLocation = { id: string; name?: string; country: string; city: string };
+type Room = { id: string; name: string; idLocation?: string; location?: RoomLocation };
 type Session = {
     id: string;
     title: string;
@@ -43,7 +44,7 @@ export default async function RoomDetailPage({ params }: RoomDetailProps) {
     const { roomId } = await params;
 
     let sessions: Session[] = [];
-    let roomName = "";
+    let room: Room | null = null;
 
     try {
         const res = await fetch(`${BASE_URL}/api/rooms/${roomId}/sessions`, {
@@ -51,16 +52,15 @@ export default async function RoomDetailPage({ params }: RoomDetailProps) {
         });
         if (res.ok) {
             sessions = await res.json();
-            if (sessions.length > 0) roomName = sessions[0].room?.name ?? "";
+            if (sessions.length > 0) room = sessions[0].room;
         }
     } catch {}
 
-    if (!roomName) {
+    if (!room) {
         try {
-            const res = await fetch(`${BASE_URL}/api/rooms`, { cache: "no-store" });
+            const res = await fetch(`${BASE_URL}/api/rooms/${roomId}`, { cache: "no-store" });
             if (res.ok) {
-                const rooms: Room[] = await res.json();
-                roomName = rooms.find((r) => r.id === roomId)?.name ?? "Hall";
+                room = await res.json();
             }
         } catch {}
     }
@@ -97,8 +97,14 @@ export default async function RoomDetailPage({ params }: RoomDetailProps) {
                                 Venue Hub
                             </span>
                             <h1 className="font-[family-name:var(--font-syne)] text-xl md:text-2xl font-extrabold tracking-tight gradient-brand-text leading-tight truncate">
-                                {roomName}
+                                {room?.name ?? "Hall"}
                             </h1>
+                            {room?.location && (
+                                <div className="flex items-center gap-1.5 mt-1 text-[11px] font-medium text-muted-foreground/70">
+                                    <FiMapPin size={11} className="text-accent shrink-0" />
+                                    <span className="truncate">{room.location.name || `${room.location.city}, ${room.location.country}`}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 

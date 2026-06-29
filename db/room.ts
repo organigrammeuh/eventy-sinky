@@ -27,13 +27,18 @@ export const findSessionByRoom = async(
         id: room.id,
         name: room.name,
         idLocation: room.idLocation,
+        location: room.location,
         sessions,
     }));
 };
 
 export const findRoomById = async (roomId: string): Promise<Room> => {
     const { rows } = await pool.query(
-        "SELECT id, name, id_location FROM room WHERE id = $1",
+        `SELECT r.id, r.name, r.id_location,
+                l.id as loc_id, l.name as loc_name, l.country as loc_country, l.city as loc_city
+         FROM room r
+         LEFT JOIN location l ON r.id_location = l.id
+         WHERE r.id = $1`,
         [roomId]
     );
 
@@ -48,6 +53,12 @@ export const findRoomById = async (roomId: string): Promise<Room> => {
         id: rows[0].id,
         name: rows[0].name,
         idLocation: rows[0].id_location,
+        location: rows[0].loc_id ? {
+            id: rows[0].loc_id,
+            name: rows[0].loc_name,
+            country: rows[0].loc_country,
+            city: rows[0].loc_city,
+        } : undefined,
     };
 }
 
