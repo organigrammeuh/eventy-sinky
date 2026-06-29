@@ -6,20 +6,21 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
     try {
-        let body: RoomCreation = { name: "" };
+        let body: RoomCreation = { name: "", idLocation: "" };
 
         try {
             body = await req.json();
             if (
                 Object.keys(body).length == 0 ||
-                !Object.keys(body).includes("name")
+                !Object.keys(body).includes("name") ||
+                !Object.keys(body).includes("idLocation")
             ) {
                 throw new Error("Missing body");
             }
         } catch {
             return NextResponse.json(
                 {
-                    message: "Please provide a name in the request body",
+                    message: "Please provide name and idLocation in the request body",
                 },
                 {
                     status: 400,
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const createdRoom = await createRoom(body.name);
+        const createdRoom = await createRoom(body.name, body.idLocation);
 
         return NextResponse.json(createdRoom, {
             status: 201,
