@@ -4,13 +4,21 @@ import { FiCalendar, FiMapPin, FiArrowRight, FiSliders, FiPlus } from "react-ico
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
+type EventLocation = {
+    id: string;
+    name?: string;
+    country: string;
+    city: string;
+};
+
 type Event = {
     id: string;
     title: string;
     description: string;
     startDate: string;
     endDate: string;
-    location?: string;
+    idLocation: string;
+    location?: EventLocation;
     sessions?: unknown[];
 };
 
@@ -124,7 +132,7 @@ export default async function EventsPage() {
                                             {e.location && (
                                                 <div className="text-[10px] font-bold text-card-foreground tracking-wide uppercase mt-1 flex items-center gap-1">
                                                     <FiMapPin size={10} />
-                                                    <span className="truncate">{e.location}</span>
+                                                    <span className="truncate">{`${e.location.country}, ${e.location.city} ${e.location.name ? (', ' + e.location.name) : "" }`}</span>
                                                 </div>
                                             )}
                                         </div>
