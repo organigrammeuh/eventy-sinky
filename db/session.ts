@@ -8,6 +8,8 @@ import {
 import { findSessionSpeaker } from "./speakers";
 import { AppError } from "@/lib/errors/AppError";
 import { getQuestionsBySession } from "./questions";
+import { getRoomLocationId } from "./room";
+import { findEventById } from "./events";
 
 export const findEventSession = async (eventId: string): Promise<Session[]> => {
     const { rows } = await pool.query(
@@ -33,7 +35,7 @@ export const findSessionById = async (
         SELECT
             s.id, s.title, s.description,
             s.start_date, s.end_date, s.capacity,
-            r.name as room_name, r.id as room_id,
+            r.name as room_name, r.id as room_id, r.id_location as room_id_location,
             e.id as event_id, e.title as event_title
         FROM session s
         JOIN room r on s.id_room = r.id
@@ -64,6 +66,7 @@ export const findSessionById = async (
         room: {
             id: session.room_id,
             name: session.room_name,
+            idLocation: session.room_id_location,
         },
         startTime: session.start_date,
         title: session.title,
@@ -104,6 +107,14 @@ export const createEventSession = async (
         roomId = toSave.id_room;
     }
 
+    if (roomId) {
+        const event = await findEventById(eventId);
+        const roomLocationId = await getRoomLocationId(roomId);
+        if (event.idLocation !== roomLocationId) {
+            throw new AppError("Room is not at the event's location", 400);
+        }
+    }
+
     const query = `
         INSERT INTO session
             (title, description, start_date, end_date, capacity, id_event, id_room)
@@ -131,7 +142,9 @@ export const updateSession = async (
 ): Promise<Session> => {
     let roomId: string | undefined;
 
-    if (toUpdate.room) {
+    if (toUpdate.id_room) {
+        roomId = toUpdate.id_room;
+    } else if (toUpdate.room) {
         const roomResult = await pool.query("SELECT id FROM room WHERE name = $1", [
             toUpdate.room,
         ]);
@@ -139,6 +152,14 @@ export const updateSession = async (
             throw new AppError(`Room ${toUpdate.room} not found`, 404);
         }
         roomId = roomResult.rows[0].id;
+    }
+
+    if (roomId) {
+        const event = await findEventById(eventId);
+        const roomLocationId = await getRoomLocationId(roomId);
+        if (event.idLocation !== roomLocationId) {
+            throw new AppError("Room is not at the event's location", 400);
+        }
     }
 
     const updateQuery = `

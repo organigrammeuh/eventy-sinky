@@ -81,3 +81,26 @@ CREATE TABLE link (
     id_speaker UUID NOT NULL,
     FOREIGN KEY (id_speaker) REFERENCES speaker (id)
 );
+
+--Location migration guys!!
+
+CREATE TABLE location (
+    id UUID DEFAULT gen_random_uuid () PRIMARY KEY,
+    name VARCHAR,
+    country VARCHAR NOT NULL,
+    city VARCHAR NOT NULL,
+    created_at TIMESTAMP DEFAULT now ()
+);
+--A default value for the events already existing
+INSERT INTO location (name, country, city) VALUES ('Default', 'Unknown', 'Unknown');
+
+--Create the column, set the default value and then force the column to not null on the event table:)
+ALTER TABLE event ADD COLUMN id_location UUID REFERENCES location (id);
+UPDATE event SET id_location = (SELECT id FROM location WHERE name = 'Default') WHERE id_location IS NULL;
+ALTER TABLE event ALTER COLUMN id_location SET NOT NULL;
+ALTER TABLE event DROP COLUMN place;
+
+--The same but with room table
+ALTER TABLE room ADD COLUMN id_location UUID REFERENCES location (id);
+UPDATE room SET id_location = (SELECT id FROM location WHERE name = 'Default') WHERE id_location IS NULL;
+ALTER TABLE room ALTER COLUMN id_location SET NOT NULL;

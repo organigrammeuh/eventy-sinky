@@ -1,13 +1,21 @@
 import Link from "next/link";
 import { EventCard, EventCardSkeleton } from "@/constants/EventCard";
 
+type EventLocation = {
+    id: string;
+    name?: string;
+    country: string;
+    city: string;
+};
+
 type Event = {
     id: string;
     title: string;
     description?: string;
     startDate: string;
     endDate?: string;
-    location?: string;
+    idLocation: string;
+    location?: EventLocation;
     sessions?: unknown[];
 };
 

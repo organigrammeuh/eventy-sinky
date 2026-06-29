@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findRoomById, updateRoom, deleteRoom } from "@/db/room";
+import { findLocationById, updateLocation, deleteLocation } from "@/db/location";
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: Promise<{ roomId: string }> }
+    { params }: { params: Promise<{ locationId: string }> }
 ) {
     try {
-        const { roomId } = await params;
-        const room = await findRoomById(roomId);
-        return NextResponse.json(room, { status: 200 });
+        const { locationId } = await params;
+        const location = await findLocationById(locationId);
+        return NextResponse.json(location, { status: 200 });
     } catch (err: any) {
         return NextResponse.json(
             { message: err.message },
@@ -17,15 +17,15 @@ export async function GET(
     }
 }
 
-export async function PUT(
+export async function PATCH(
     req: NextRequest,
-    { params }: { params: Promise<{ roomId: string }> }
+    { params }: { params: Promise<{ locationId: string }> }
 ) {
     try {
-        const { roomId } = await params;
+        const { locationId } = await params;
         const body = await req.json();
-        const room = await updateRoom(roomId, body.name, body.idLocation);
-        return NextResponse.json(room, { status: 200 });
+        const location = await updateLocation(locationId, body);
+        return NextResponse.json(location, { status: 200 });
     } catch (err: any) {
         return NextResponse.json(
             { message: err.message },
@@ -36,11 +36,11 @@ export async function PUT(
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: Promise<{ roomId: string }> }
+    { params }: { params: Promise<{ locationId: string }> }
 ) {
     try {
-        const { roomId } = await params;
-        await deleteRoom(roomId);
+        const { locationId } = await params;
+        await deleteLocation(locationId);
         return NextResponse.json({}, { status: 200 });
     } catch (err: any) {
         return NextResponse.json(

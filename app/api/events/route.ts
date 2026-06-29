@@ -9,7 +9,7 @@ export async function POST (
 
     const toSave : EventCreation  = await req.json();
 
-    if(!toSave.startDate || !toSave.title || !toSave.endDate || !toSave.description){
+    if(!toSave.startDate || !toSave.title || !toSave.endDate || !toSave.description || !toSave.idLocation){
         return NextResponse.json(
             {message : 'Please provide all the required infos about the event'},
             {status : 400}
@@ -49,8 +49,6 @@ export async function GET(
         try {
             const sortParam = req.nextUrl.searchParams.get("sort");
             if (sortParam) sort = JSON.parse(sortParam);
-            //TODO: migration => change in the db place -> location
-            if(sort[0] == 'location') sort[0] = 'place'
         } catch {
             sort = [];
         }

@@ -75,7 +75,7 @@ export default async function EventPage({ params }: EventProps) {
                         {event.location && (
                             <div className="flex items-center gap-2 bg-muted border border-card-border rounded-xl px-4 py-2 text-xs font-bold text-muted-foreground">
                                 <FiMapPin className="text-accent" size={13} />
-                                <span className="truncate max-w-[240px]">{event.location}</span>
+                                <span className="truncate max-w-[240px]">{event.location.name || `${event.location.city}, ${event.location.country}`}</span>
                             </div>
                         )}
 

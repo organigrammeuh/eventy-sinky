@@ -3,6 +3,7 @@ import { pool } from "@/lib/db";
 import { deleteSession, findEventSession } from "./session";
 import { AppError } from "@/lib/errors/AppError";
 import { Session } from "@/types/sessions";
+import { findLocationById } from "./location";
 
 export const createEvent = async (
     toSave : EventCreation
@@ -10,7 +11,7 @@ export const createEvent = async (
 
     const query = `
         INSERT INTO event
-        (title, description, start_date, end_date, place)
+        (title, description, start_date, end_date, id_location)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id
     `;
@@ -21,7 +22,7 @@ export const createEvent = async (
             toSave.description,
             toSave.startDate,
             toSave.endDate,
-            toSave.location
+            toSave.idLocation
         ]
     );
 
@@ -32,7 +33,7 @@ export const createEvent = async (
         endDate: toSave.endDate,
         startDate: toSave.startDate,
         id: createdEventId,
-        location: toSave.location,
+        idLocation: toSave.idLocation,
         title: toSave.title
     } as Event;
 
@@ -48,25 +49,25 @@ export const findAllEvent = async(
     const values: any[] = [];
 
     if (filter) {
-        if (filter.location) {
-            conditions.push(`place ilike $${values.length + 1}`);
-            values.push(`%${filter.location}%`);
+        if (filter.idLocation) {
+            conditions.push(`e.id_location = $${values.length + 1}`);
+            values.push(filter.idLocation);
         }
         if (filter.end_date) {
-            conditions.push(`end_date < $${values.length + 1}`);
+            conditions.push(`e.end_date < $${values.length + 1}`);
             values.push(filter.end_date);
         }
         if (filter.start_date) {
-            conditions.push(`start_date > $${values.length + 1}`);
+            conditions.push(`e.start_date > $${values.length + 1}`);
             values.push(filter.start_date);
         }
         if (filter.title) {
-            conditions.push(`title ilike $${values.length + 1}`);
+            conditions.push(`e.title ilike $${values.length + 1}`);
             values.push(`%${filter.title}%`);
         }
     }
 
-    let findEventsQuery = `select id from event`;
+    let findEventsQuery = `select e.id from event e`;
 
     if (conditions.length > 0) {
         findEventsQuery += ` where ${conditions.join(' and ')}`;
@@ -95,9 +96,11 @@ export const findEventById = async(
 
     const findEventQuery = `
         SELECT 
-            id, title, description, start_date, end_date, place
-        FROM event
-        WHERE id = $1
+            e.id, e.title, e.description, e.start_date, e.end_date, e.id_location,
+            l.id as loc_id, l.name as loc_name, l.country as loc_country, l.city as loc_city
+        FROM event e
+        LEFT JOIN location l ON e.id_location = l.id
+        WHERE e.id = $1
     `;
 
     const {rows} = await pool.query(
@@ -119,7 +122,13 @@ export const findEventById = async(
         description : rows[0].description,
         startDate: rows[0].start_date,
         endDate : rows[0].end_date,
-        location: rows[0].place
+        idLocation: rows[0].id_location,
+        location: rows[0].loc_id ? {
+            id: rows[0].loc_id,
+            name: rows[0].loc_name,
+            country: rows[0].loc_country,
+            city: rows[0].loc_city,
+        } : undefined,
     };
 
     event.sessions = await findEventSession(eventId);
@@ -161,12 +170,12 @@ export const updateEvent = async(
         updateQuery += ` start_date = $${updateParams.length}`;
     }
 
-    if(udpatedData.location){
+    if(udpatedData.idLocation){
         if(updateParams.length != 0){
             updateQuery += ','
         }
-        updateParams.push(udpatedData.location);
-        updateQuery += ` place = $${updateParams.length}`;
+        updateParams.push(udpatedData.idLocation);
+        updateQuery += ` id_location = $${updateParams.length}`;
     }
 
     if(udpatedData.title){
