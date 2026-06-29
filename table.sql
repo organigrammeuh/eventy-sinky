@@ -104,3 +104,21 @@ ALTER TABLE event DROP COLUMN place;
 ALTER TABLE room ADD COLUMN id_location UUID REFERENCES location (id);
 UPDATE room SET id_location = (SELECT id FROM location WHERE name = 'Default') WHERE id_location IS NULL;
 ALTER TABLE room ALTER COLUMN id_location SET NOT NULL;
+
+CREATE TABLE speaker_request (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    full_name VARCHAR NOT NULL,
+    biography TEXT,
+    profile_picture_url VARCHAR,
+    status VARCHAR NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'approved', 'rejected')),
+    created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE speaker_request_link (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    url TEXT NOT NULL,
+    type VARCHAR,
+    id_speaker_request UUID NOT NULL,
+    FOREIGN KEY (id_speaker_request) REFERENCES speaker_request(id) ON DELETE CASCADE
+);
