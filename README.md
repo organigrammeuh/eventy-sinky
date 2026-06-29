@@ -168,8 +168,8 @@ Favorites are stored client-side, in the browser.
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/eventsync.git
-cd eventsync
+https://github.com/organigrammeuh/eventy-sinky.git
+cd eventy-sinky
 
 # Install dependencies
 npm install
@@ -179,13 +179,6 @@ npm run dev
 ```
 
 The app will be available at `http://localhost:3000`.
-
-### Environment Variables
-
-```env
-NEXT_PUBLIC_BASE_URL=http://localhost:3000
-DATABASE_URL=
-```
 
 ---
 
