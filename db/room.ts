@@ -1,7 +1,7 @@
 import { Session } from "@/types/sessions";
 import { findEventById } from "./events";
 import { findEventSession, findSessionById } from "./session";
-import { Room, RoomFiltering, RoomPagination, RoomSessions } from "@/types/room";
+import { Room, RoomCreation, RoomFiltering, RoomPagination, RoomSessions } from "@/types/room";
 import { pool } from "@/lib/db";
 import { AppError } from "@/lib/errors/AppError";
 
@@ -26,13 +26,19 @@ export const findSessionByRoom = async(
     return Array.from(roomMap.values()).map(({ room, sessions }) => ({
         id: room.id,
         name: room.name,
+        idLocation: room.idLocation,
+        location: room.location,
         sessions,
     }));
 };
 
 export const findRoomById = async (roomId: string): Promise<Room> => {
     const { rows } = await pool.query(
-        "SELECT id, name FROM room WHERE id = $1",
+        `SELECT r.id, r.name, r.id_location,
+                l.id as loc_id, l.name as loc_name, l.country as loc_country, l.city as loc_city
+         FROM room r
+         LEFT JOIN location l ON r.id_location = l.id
+         WHERE r.id = $1`,
         [roomId]
     );
 
@@ -43,7 +49,17 @@ export const findRoomById = async (roomId: string): Promise<Room> => {
         );
     }
 
-    return rows[0] as Room;
+    return {
+        id: rows[0].id,
+        name: rows[0].name,
+        idLocation: rows[0].id_location,
+        location: rows[0].loc_id ? {
+            id: rows[0].loc_id,
+            name: rows[0].loc_name,
+            country: rows[0].loc_country,
+            city: rows[0].loc_city,
+        } : undefined,
+    };
 }
 
 export const findSessionsByRoomId = async (roomId: string): Promise<Session[]> => {
@@ -76,18 +92,22 @@ export const findAllRooms = async (
     const values: any[] = [];
 
     if (filter?.name) {
-        conditions.push(`name ilike $${values.length + 1}`);
+        conditions.push(`r.name ilike $${values.length + 1}`);
         values.push(`%${filter.name}%`);
     }
+    if (filter?.idLocation) {
+        conditions.push(`r.id_location = $${values.length + 1}`);
+        values.push(filter.idLocation);
+    }
 
-    let query = 'select id from room';
+    let query = 'SELECT r.id FROM room r';
     if (conditions.length > 0) {
-        query += ` where ${conditions.join(' and ')}`;
+        query += ` WHERE ${conditions.join(' AND ')}`;
     }
 
     const allowedDirections = ['asc', 'desc', 'ASC', 'DESC'];
     if (sort && sort.length > 0 && allowedDirections.includes(sort[1])) {
-        query += ` order by ${sort[0]} ${sort[1]}`;
+        query += ` ORDER BY ${sort[0]} ${sort[1]}`;
     }
 
     const { rows } = await pool.query(query, values);
@@ -103,33 +123,40 @@ export const findAllRooms = async (
 }
 
 export const createRoom = async(
-    name : string
+    name : string,
+    idLocation: string
 ) : Promise<Room> => {
 
     const {rows} = await pool.query(
         `INSERT INTO room
-            (name)
-        VALUES ($1)
+            (name, id_location)
+        VALUES ($1, $2)
         RETURNING id;`, [
-            name
+            name,
+            idLocation
         ]
     );
 
     return {
         id : rows[0].id,
-        name : name
+        name : name,
+        idLocation,
     };
 }
 
-export const updateRoom = async (roomId: string, name: string): Promise<Room> => {
+export const updateRoom = async (roomId: string, name: string, idLocation?: string): Promise<Room> => {
     const { rows } = await pool.query(
-        'UPDATE room SET name = $1 WHERE id = $2 RETURNING id, name',
-        [name, roomId]
+        'UPDATE room SET name = $1, id_location = COALESCE($2, id_location) WHERE id = $3 RETURNING id, name, id_location',
+        [name, idLocation ?? null, roomId]
     );
     if (rows.length === 0) {
         throw new AppError(`Room with id={${roomId}} not found.`, 404);
     }
-    return rows[0] as Room;
+    return {
+        id: rows[0].id,
+        name: rows[0].name,
+        idLocation: rows[0].id_location,
+    };
 };
 
 export const deleteRoom = async (roomId: string): Promise<void> => {
@@ -137,4 +164,15 @@ export const deleteRoom = async (roomId: string): Promise<void> => {
     if (rowCount === 0) {
         throw new AppError(`Room with id={${roomId}} not found.`, 404);
     }
+};
+
+export const getRoomLocationId = async (roomId: string): Promise<string> => {
+    const { rows } = await pool.query(
+        "SELECT id_location FROM room WHERE id = $1",
+        [roomId]
+    );
+    if (rows.length === 0) {
+        throw new AppError(`Room with id={${roomId}} not found.`, 404);
+    }
+    return rows[0].id_location;
 };

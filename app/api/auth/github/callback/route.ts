@@ -150,22 +150,24 @@ export async function GET(request: Request) {
       role: user.role,
     });
 
-    return NextResponse.json(
-      {
-        accessToken,
-        refreshToken,
-        user: {
-          id: user.id,
-          fullName: user.full_name,
-          email: user.email,
-          avatarUrl: user.avatar_url,
-          role: user.role,
-          authProvider: user.auth_provider,
-          createdAt: user.created_at,
-        },
-      },
-      { status: 200 },
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const redirectUrl = new URL("/login", frontendUrl);
+    redirectUrl.searchParams.set("accessToken", accessToken);
+    redirectUrl.searchParams.set("refreshToken", refreshToken);
+    redirectUrl.searchParams.set(
+      "user",
+      JSON.stringify({
+        id: user.id,
+        fullName: user.full_name,
+        email: user.email,
+        avatarUrl: user.avatar_url,
+        role: user.role,
+        authProvider: user.auth_provider,
+        createdAt: user.created_at,
+      }),
     );
+
+    return NextResponse.redirect(redirectUrl.toString());
   } catch (error) {
     console.error("GitHub OAuth callback error:", error);
 

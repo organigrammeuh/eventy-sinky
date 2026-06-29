@@ -1,13 +1,21 @@
 import Link from "next/link";
 import { FiCalendar, FiMapPin, FiLayers } from "react-icons/fi";
 
+type EventLocation = {
+    id: string;
+    name?: string;
+    country: string;
+    city: string;
+};
+
 type Event = {
     id: string;
     title: string;
     description?: string;
     startDate: string;
     endDate?: string;
-    location?: string;
+    idLocation: string;
+    location?: EventLocation;
     sessions?: unknown[];
 };
 
@@ -66,7 +74,7 @@ export function EventCard({ event }: { event: Event }) {
                         {event.location && (
                             <span className="text-[11px] font-medium text-muted-foreground/70 truncate max-w-[160px] flex items-center gap-1.5">
                                 <FiMapPin size={11} className="text-accent shrink-0" />
-                                {event.location}
+                                {event.location.name || `${event.location.city}, ${event.location.country}`}
                             </span>
                         )}
                     </div>

@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { FiArrowLeft, FiClock, FiCalendar, FiUser, FiLayers, FiRadio } from "react-icons/fi";
+import { FiArrowLeft, FiClock, FiCalendar, FiUser, FiLayers, FiRadio, FiMapPin } from "react-icons/fi";
 
 type Speaker = { id: string; fullName: string };
-type Room = { id: string; name: string };
+type RoomLocation = { id: string; name?: string; country: string; city: string };
+type Room = { id: string; name: string; idLocation?: string; location?: RoomLocation };
 type Session = {
     id: string;
     title: string;
@@ -43,7 +44,7 @@ export default async function RoomDetailPage({ params }: RoomDetailProps) {
     const { roomId } = await params;
 
     let sessions: Session[] = [];
-    let roomName = "";
+    let room: Room | null = null;
 
     try {
         const res = await fetch(`${BASE_URL}/api/rooms/${roomId}/sessions`, {
@@ -51,23 +52,26 @@ export default async function RoomDetailPage({ params }: RoomDetailProps) {
         });
         if (res.ok) {
             sessions = await res.json();
-            if (sessions.length > 0) roomName = sessions[0].room?.name ?? "";
+            if (sessions.length > 0) room = sessions[0].room;
         }
     } catch {}
 
-    if (!roomName) {
+    if (!room) {
         try {
-            const res = await fetch(`${BASE_URL}/api/rooms`, { cache: "no-store" });
+            const res = await fetch(`${BASE_URL}/api/rooms/${roomId}`, { cache: "no-store" });
             if (res.ok) {
-                const rooms: Room[] = await res.json();
-                roomName = rooms.find((r) => r.id === roomId)?.name ?? "Hall";
+                room = await res.json();
             }
         } catch {}
     }
 
-    const sorted = [...sessions].sort(
-        (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-    );
+    const sorted = [...sessions].sort((a, b) => {
+        const aLive = isLive(a);
+        const bLive = isLive(b);
+        if (aLive && !bLive) return -1;
+        if (!aLive && bLive) return 1;
+        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+    });
 
     return (
         <main className="w-screen min-h-screen mt-8 relative backdrop-blur-[2px] text-foreground px-4 py-12 md:px-12 lg:px-20 overflow-hidden">
@@ -93,8 +97,14 @@ export default async function RoomDetailPage({ params }: RoomDetailProps) {
                                 Venue Hub
                             </span>
                             <h1 className="font-[family-name:var(--font-syne)] text-xl md:text-2xl font-extrabold tracking-tight gradient-brand-text leading-tight truncate">
-                                {roomName}
+                                {room?.name ?? "Hall"}
                             </h1>
+                            {room?.location && (
+                                <div className="flex items-center gap-1.5 mt-1 text-[11px] font-medium text-muted-foreground/70">
+                                    <FiMapPin size={11} className="text-accent shrink-0" />
+                                    <span className="truncate">{room.location.name || `${room.location.city}, ${room.location.country}`}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -122,10 +132,10 @@ export default async function RoomDetailPage({ params }: RoomDetailProps) {
                                 return (
                                     <Link key={s.id} href={`/sessions/${s.id}`} className="no-underline group">
                                         <div
-                                            className={`glass rounded-2xl border transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 relative overflow-hidden ${
+                                            className={`rounded-2xl border transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 relative overflow-hidden ${
                                                 live
-                                                    ? "border-live/60 bg-gradient-to-r from-live/5 via-transparent to-transparent shadow-sm"
-                                                    : "border-card-border/40 hover:border-primary/30"
+                                                    ? "border-live/40 bg-gradient-to-br from-live/70 to-card/50 shadow-sm"
+                                                    : "glass border-card-border/40 hover:border-primary/30"
                                             }`}
                                         >
                                             {live && (
@@ -136,18 +146,18 @@ export default async function RoomDetailPage({ params }: RoomDetailProps) {
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     {live && (
                                                         <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-white bg-live border border-live px-2 py-0.5 rounded-md shadow-sm mr-1">
-                                                            <span className="live-dot shrink-0" />
                                                             Live
                                                         </span>
                                                     )}
-                                                    <h3 className="font-[family-name:var(--font-syne)] text-sm md:text-base font-extrabold tracking-tight text-foreground/80 group-hover:text-primary transition-colors leading-snug">
+                                                    <h3 className={`font-[family-name:var(--font-syne)] text-sm md:text-base font-extrabold tracking-tight text-foreground/80 transition-colors leading-snug 
+                                                        ${live ? "group-hover:text-white":"group-hover:text-primary"} `}>
                                                         {s.title}
                                                     </h3>
                                                 </div>
 
                                                 {s.speakers && s.speakers.length > 0 && (
-                                                    <div className="text-[11px]  text-muted-foreground/80 tracking-tight flex items-center gap-1">
-                                                        <FiUser size={12} className="text-accent" />
+                                                    <div className={`text-[11px] tracking-tight flex items-center gap-1 ${live ? "text-card-foreground/70": "text-muted-foreground/80"}`}>
+                                                        <FiUser size={12} className="text-primary" />
                                                         <span>Hosted by {s.speakers.map((sp) => sp.fullName).join(", ")}</span>
                                                     </div>
                                                 )}

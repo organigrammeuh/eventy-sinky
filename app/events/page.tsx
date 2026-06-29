@@ -4,13 +4,21 @@ import { FiCalendar, FiMapPin, FiArrowRight, FiSliders, FiPlus } from "react-ico
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
 
+type EventLocation = {
+    id: string;
+    name?: string;
+    country: string;
+    city: string;
+};
+
 type Event = {
     id: string;
     title: string;
     description: string;
     startDate: string;
     endDate: string;
-    location?: string;
+    idLocation: string;
+    location?: EventLocation;
     sessions?: unknown[];
 };
 
@@ -64,14 +72,14 @@ export default async function EventsPage() {
                             <span className="gradient-brand-text">our events</span>
                         </h1>
 
-                        <p className="text-white leading-relaxed text-sm max-w-sm">
+                        <p className="text-white/70 leading-relaxed text-sm max-w-sm">
                             Browse all upcoming gatheringsBrowse all upcoming gatherings and workshops. Select an event to explore its dedicated sessions. and workshops. Select an event to explore its dedicated sessions.
                         </p>
                     </div>
 
                     <div className="mt-0 lg:mt-0 flex items-center gap-4 border-t border-card-border/40 pt-6">
-                        <div className="text-xs font-bold uppercase tracking-wider bg-muted/50 text-foreground px-4 py-2 rounded-xl border border-card-border/40">
-                            {events.length} au total
+                        <div className="text-xs font-bold uppercase tracking-wider bg-muted/50 text-foreground/80 px-4 py-2 rounded-xl border border-card-border/40">
+                            Total : {events.length} events
                         </div>
                     </div>
                 </div>
@@ -124,7 +132,7 @@ export default async function EventsPage() {
                                             {e.location && (
                                                 <div className="text-[10px] font-bold text-card-foreground tracking-wide uppercase mt-1 flex items-center gap-1">
                                                     <FiMapPin size={10} />
-                                                    <span className="truncate">{e.location}</span>
+                                                    <span className="truncate">{`${e.location.country}, ${e.location.city} ${e.location.name ? (', ' + e.location.name) : "" }`}</span>
                                                 </div>
                                             )}
                                         </div>

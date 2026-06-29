@@ -26,7 +26,7 @@ export default async function SpeakersPage() {
                     <h1 className="font-[family-name:var(--font-syne)] text-5xl md:text-5xl font-extrabold tracking-tight gradient-brand-text mt-2">
                         Meet all our speakers
                     </h1>
-                    <p className="text-sm text-white max-w-md leading-relaxed mt-1">
+                    <p className="text-sm text-white/60 max-w-md leading-relaxed mt-1">
                         Here are the incredible people behind our sessions
                     </p>
                 </div>
