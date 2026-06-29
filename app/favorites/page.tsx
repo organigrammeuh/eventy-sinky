@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FiClock, FiMapPin, FiCalendar, FiTrash2, FiUser, FiHeart, FiArrowRight } from "react-icons/fi";
+import { FiClock, FiMapPin, FiCalendar, FiTrash2, FiUser, FiHeart, FiArrowRight, FiActivity } from "react-icons/fi";
 
 type Speaker = { id: string; fullName: string };
 type Room = { id: string; name: string };
@@ -31,9 +31,9 @@ function fmtDate(d: string) {
     });
 }
 
-function isLive(s: Session) {
+function checkIsLive(startTime: string, endTime: string): boolean {
     const now = new Date();
-    return new Date(s.startTime) <= now && new Date(s.endTime) >= now;
+    return new Date(startTime) <= now && new Date(endTime) >= now;
 }
 
 function getFavoriteIds(): string[] {
@@ -67,14 +67,17 @@ export default function FavoritesPage() {
                     .catch(() => null)
             )
         ).then((results) => {
-            setSessions(
-                results
-                    .filter(Boolean)
-                    .sort(
-                        (a: Session, b: Session) =>
-                            new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-                    )
-            );
+            const validSessions = results.filter(Boolean) as Session[];
+
+            const sortedSessions = validSessions.sort((a, b) => {
+                const aLive = checkIsLive(a.startTime, a.endTime);
+                const bLive = checkIsLive(b.startTime, b.endTime);
+                if (aLive && !bLive) return -1;
+                if (!aLive && bLive) return 1;
+                return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+            });
+
+            setSessions(sortedSessions);
             setLoading(false);
         });
     }, []);
@@ -142,14 +145,14 @@ export default function FavoritesPage() {
                 ) : (
                     <div className="flex flex-col gap-3.5">
                         {sessions.map((s) => {
-                            const live = isLive(s);
+                            const live = checkIsLive(s.startTime, s.endTime);
                             return (
                                 <div
                                     key={s.id}
-                                    className={`glass rounded-2xl border transition-all duration-300 flex items-center justify-between gap-6 p-4 md:p-5 relative overflow-hidden group ${
+                                    className={` rounded-2xl border transition-all duration-300 flex items-center justify-between gap-6 p-4 md:p-5 relative overflow-hidden group ${
                                         live
-                                            ? "border-live/60 bg-gradient-to-r from-live/5 via-transparent to-transparent shadow-sm"
-                                            : "border-card-border/40 hover:border-primary/30"
+                                            ? "bg-card-border border-live/60 bg-gradient-to-r from-live/5 via-transparent to-transparent shadow-sm"
+                                            : "glass border-card-border/40 hover:border-primary/30"
                                     }`}
                                 >
                                     {live && (
@@ -161,12 +164,14 @@ export default function FavoritesPage() {
 
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 {live && (
-                                                    <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-white bg-live/80 border border-live px-2 py-0.5 rounded-md shadow-sm mr-1">
-                                                        <span className="live-dot shrink-0" />
+                                                    <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-white bg-live border border-live px-2 py-0.5 rounded-md shadow-sm mr-1 ">
+                                                        <FiActivity size={10} />
                                                         Live Now
                                                     </span>
                                                 )}
-                                                <h3 className="font-[family-name:var(--font-syne)] text-sm md:text-base font-extrabold tracking-tight text-foreground group-hover:text-primary transition-colors leading-snug truncate">
+                                                <h3 className={`font-[family-name:var(--font-syne)] text-sm md:text-base font-extrabold tracking-tight transition-colors leading-snug truncate ${
+                                                    live ? "text-foreground group-hover:text-live" : "text-foreground group-hover:text-primary"
+                                                }`}>
                                                     {s.title}
                                                 </h3>
                                             </div>
@@ -183,7 +188,7 @@ export default function FavoritesPage() {
                                                 {s.room && (
                                                     <div className="flex items-center gap-1">
                                                         <FiMapPin size={11} className="text-primary" />
-                                                        <span>{s.room.name}</span>
+                                                        <span>{typeof s.room === "object" ? s.room.name : s.room}</span>
                                                     </div>
                                                 )}
                                             </div>
