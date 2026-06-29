@@ -79,6 +79,19 @@ function toggleFavorite(sessionId: string): boolean {
     }
 }
 
+function getUpvotedIds(): string[] {
+    try { return JSON.parse(localStorage.getItem("eventsync_upvotes") ?? "[]"); }
+    catch { return []; }
+}
+
+function markUpvoted(questionId: string) {
+    const ids = getUpvotedIds();
+    if (!ids.includes(questionId)) {
+        ids.push(questionId);
+        localStorage.setItem("eventsync_upvotes", JSON.stringify(ids));
+    }
+}
+
 export default function SessionDetailPage() {
     const params = useParams();
     const sessionId = params?.sessionId as string;
@@ -87,6 +100,7 @@ export default function SessionDetailPage() {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFavorite, setIsFavorite] = useState(false);
+    const [upvotedIds, setUpvotedIds] = useState<string[]>([]);
 
     const [newQuestionContent, setNewQuestionContent] = useState("");
     const [newQuestionName, setNewQuestionName] = useState("");
@@ -95,6 +109,7 @@ export default function SessionDetailPage() {
     useEffect(() => {
         if (sessionId) {
             setIsFavorite(getFavorites().includes(sessionId));
+            setUpvotedIds(getUpvotedIds());
         }
     }, [sessionId]);
 
@@ -117,15 +132,20 @@ export default function SessionDetailPage() {
 
     useEffect(() => {
         fetchSession();
+        const interval = setInterval(fetchSession, 60_000);
+        return () => clearInterval(interval);
     }, [fetchSession]);
 
     const handleUpvote = async (questionId: string) => {
+        if (upvotedIds.includes(questionId)) return;
         try {
             const res = await fetch(`/api/questions/${questionId}/upvote`, {
                 method: "POST",
             });
             if (!res.ok) return;
             const updated = await res.json();
+            markUpvoted(questionId);
+            setUpvotedIds((prev) => [...prev, questionId]);
             setQuestions((prev) =>
                 [...prev.map((q) => (q.id === questionId ? updated : q))].sort(
                     (a, b) => b.upvotes - a.upvotes
@@ -251,7 +271,6 @@ export default function SessionDetailPage() {
                             </h2>
                         </div>
 
-                        {session.isLive ? (
                             <div className="flex flex-col gap-4">
                                 <form onSubmit={handleSubmitQuestion} className="glass rounded-2xl p-4 border border-card-border/50 bg-muted/30 flex flex-col gap-3">
                                     <textarea
@@ -260,7 +279,8 @@ export default function SessionDetailPage() {
                                         placeholder="Ask a question..."
                                         value={newQuestionContent}
                                         onChange={(e) => setNewQuestionContent(e.target.value)}
-                                        className="w-full bg-background/50 border border-card-border/60 rounded-xl p-3 text-xs outline-none focus:border-primary/50 text-foreground placeholder:text-muted-foreground/60 resize-none transition-colors text-left"
+                                        disabled={!session.isLive}
+                                        className="w-full bg-background/50 border border-card-border/60 rounded-xl p-3 text-xs outline-none focus:border-primary/50 text-foreground placeholder:text-muted-foreground/60 resize-none transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
                                     />
                                     <div className="flex flex-col gap-3">
                                         <input
@@ -268,11 +288,12 @@ export default function SessionDetailPage() {
                                             placeholder="Your Name (Optional)"
                                             value={newQuestionName}
                                             onChange={(e) => setNewQuestionName(e.target.value)}
-                                            className="bg-background/50 border border-card-border/60 rounded-xl px-3 py-2 text-xs outline-none focus:border-primary/50 text-foreground placeholder:text-muted-foreground/60 transition-colors w-full text-left"
+                                            disabled={!session.isLive}
+                                            className="bg-background/50 border border-card-border/60 rounded-xl px-3 py-2 text-xs outline-none focus:border-primary/50 text-foreground placeholder:text-muted-foreground/60 transition-colors w-full text-left disabled:opacity-50 disabled:cursor-not-allowed"
                                         />
                                         <button
                                             type="submit"
-                                            disabled={submittingQuestion || !newQuestionContent.trim()}
+                                            disabled={submittingQuestion || !newQuestionContent.trim() || !session.isLive}
                                             className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-bold px-4 py-2 rounded-xl transition-all disabled:opacity-40 cursor-pointer flex items-center justify-center gap-1.5 w-full shadow-sm"
                                         >
                                             {submittingQuestion ? "Sending..." : "Send"}
@@ -300,9 +321,16 @@ export default function SessionDetailPage() {
 
                                                 <button
                                                     onClick={() => handleUpvote(q.id)}
-                                                    className="inline-flex items-center gap-1.5 bg-muted/60 hover:bg-primary/10 border border-card-border/40 hover:border-primary/30 rounded-xl px-2.5 py-1.5 transition-all text-muted-foreground hover:text-primary cursor-pointer group"
+                                                    disabled={!session.isLive || upvotedIds.includes(q.id)}
+                                                    className={`inline-flex items-center gap-1.5 border rounded-xl px-2.5 py-1.5 transition-all text-muted-foreground ${
+                                                        upvotedIds.includes(q.id)
+                                                            ? "bg-primary/15 border-primary/40 text-primary cursor-default"
+                                                            : session.isLive
+                                                                ? "bg-muted/60 border-card-border/40 hover:bg-primary/10 hover:border-primary/30 hover:text-primary cursor-pointer"
+                                                                : "bg-muted/60 opacity-40 cursor-not-allowed border-card-border/20"
+                                                    }`}
                                                 >
-                                                    <FiTrendingUp size={12} className="group-hover:-translate-y-0.5 transition-transform" />
+                                                    <FiTrendingUp size={12} />
                                                     <span className="text-[10px] font-black">{q.upvotes}</span>
                                                 </button>
                                             </div>
@@ -310,11 +338,6 @@ export default function SessionDetailPage() {
                                     )}
                                 </div>
                             </div>
-                        ) : (
-                            <div className="glass rounded-2xl p-6 text-center border border-card-border text-muted-foreground text-sm font-medium bg-muted/20">
-                                Questions will be available when this session goes live.
-                            </div>
-                        )}
                     </div>
                 </div>
 
