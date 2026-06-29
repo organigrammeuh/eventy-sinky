@@ -5,7 +5,10 @@
 EventSync replaces static event materials (PDFs, printed programs) with a dynamic web experience for navigating events and interacting with sessions as they happen.
 
 <p align="center">
-  <img src="./screenshots/home.png" alt="EventSync homepage" width="800"/>
+  <img src="screenshots/home.png" alt="EventSync homepage" width="800"/>
+</p>
+<p align="center">
+  <img src="screenshots/home2.png" alt="EventSync homepage" width="800"/>
 </p>
 
 <p align="center">
@@ -54,28 +57,31 @@ The platform's centerpiece is a **live Q&A system**: while a session is in progr
 ### Event Page
 
 <p align="center">
-  <img src="./screenshots/event-page.png" alt="Event detail page" width="800"/>
+  <img src="screenshots/event.png" alt="Event detail page" width="800"/>
 </p>
 
 ### Multi-Track Schedule
 
 <p align="center">
-  <img src="./screenshots/schedule.png" alt="Multi-track schedule view" width="800"/>
+  <img src="screenshots/session.png" alt="Multi-track schedule view" width="800"/>
 </p>
 
 ### Session Detail & Live Q&A
 
 <p align="center">
-  <img src="./screenshots/session-detail.png" alt="Session detail with live Q&A" width="800"/>
+  <img src="screenshots/session_details.png" alt="Session detail with live Q&A" width="800"/>
 </p>
 
 ### Speaker Page
 
 <p align="center">
-  <img src="./screenshots/speaker-page.png" alt="Speaker public page" width="800"/>
+  <img src="screenshots/speaker.png" alt="Speaker public page" width="800"/>
 </p>
+
+### Favorites Page
+
 <p align="center">
-  <img src="./screenshots/speaker-page.png" alt="Speaker public page" width="800"/>
+  <img src="screenshots/favorites.png" alt="Speaker public page" width="800"/>
 </p>
 
 ## User Roles
