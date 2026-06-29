@@ -57,7 +57,7 @@ The platform's centerpiece is a **live Q&A system**: while a session is in progr
 ### Event Page
 
 <p align="center">
-  <img src="screenshots/event.png" alt="Event detail page" width="800"/>
+  <img src="screenshots/events.png" alt="Event detail page" width="800"/>
 </p>
 
 ### Multi-Track Schedule
