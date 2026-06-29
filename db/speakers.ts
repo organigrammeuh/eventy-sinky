@@ -6,8 +6,8 @@ import { findSessionById } from "./session";
 import { toSnakeCase } from "@/lib/params";
 
 export const findSessionSpeaker = async (
-    sessionId : string
-) : Promise<Speaker[]> => {
+    sessionId: string
+): Promise<Speaker[]> => {
 
     const findSpeakerQuery = `
         SELECT
@@ -18,7 +18,7 @@ export const findSessionSpeaker = async (
         WHERE ss.id_session = $1
     `;
 
-        const findSpeakerLinksQuery = `
+    const findSpeakerLinksQuery = `
         SELECT 
             url
         FROM link
@@ -27,32 +27,32 @@ export const findSessionSpeaker = async (
 
 
     const findSpeakerResult = await pool.query(
-        findSpeakerQuery , [sessionId]
+        findSpeakerQuery, [sessionId]
     );
-    
-    const speakers : Speaker[] = [];
 
-    for(const speaker of findSpeakerResult.rows){
-        
-        let thisSpeaker : Speaker = {
+    const speakers: Speaker[] = [];
+
+    for (const speaker of findSpeakerResult.rows) {
+
+        let thisSpeaker: Speaker = {
             id: speaker.id,
             bio: speaker.biography,
             fullName: speaker.full_name,
             profilePicture: speaker.profile_picture_url
         };
 
-        let links : string[] = [];
+        let links: string[] = [];
 
         const getSpeakerLinkResult = await pool.query(
-            findSpeakerLinksQuery , [speaker.id]
+            findSpeakerLinksQuery, [speaker.id]
         );
 
-        for(const linkRow of getSpeakerLinkResult.rows){
+        for (const linkRow of getSpeakerLinkResult.rows) {
             links.push(linkRow.url);
         }
 
         thisSpeaker.socialLinks = links;
-        
+
         speakers.push(thisSpeaker);
 
     }
@@ -61,11 +61,11 @@ export const findSessionSpeaker = async (
 
 }
 
-export const findSpeakerSessions = async(
-    speakerId : string,
-    eventId ?: string
-) : Promise<Session[]> => {
-    
+export const findSpeakerSessions = async (
+    speakerId: string,
+    eventId?: string
+): Promise<Session[]> => {
+
     const query = eventId ? `
         select ss.id_session 
         from session_speaker ss
@@ -81,11 +81,11 @@ export const findSpeakerSessions = async(
 
     const params = eventId ? [speakerId, eventId] : [speakerId];
 
-    const {rows} = await pool.query(query, params);
+    const { rows } = await pool.query(query, params);
 
-    const sessions : Session[] = [];
+    const sessions: Session[] = [];
 
-    for(const row of rows) {
+    for (const row of rows) {
         const session = await findSessionById(row.id_session);
         sessions.push(session);
     }
@@ -93,20 +93,20 @@ export const findSpeakerSessions = async(
     return sessions;
 }
 
-export const findSpeakerById = async(
-    speakerId : string
-) : Promise<Speaker> => {
+export const findSpeakerById = async (
+    speakerId: string
+): Promise<Speaker> => {
 
     const speakerInfo = await pool.query(
         `SELECT
             id, full_name, profile_picture_url, biography
         FROM speaker
-        WHERE  id  = $1` ,[
-            speakerId
-        ]
+        WHERE  id  = $1` , [
+        speakerId
+    ]
     );
 
-    if(speakerInfo.rowCount == 0){
+    if (speakerInfo.rowCount == 0) {
         throw new AppError(
             `Speaker with id={${speakerId}} not found`,
             404
@@ -114,34 +114,34 @@ export const findSpeakerById = async(
     }
 
     const speakerUrls = await pool.query(
-       `
+        `
         SELECT 
                 url
             FROM link
             WHERE id_speaker = $1
         ` , [
-            speakerId
-        ]
+        speakerId
+    ]
     );
 
-    const urls : string[] = speakerUrls.rows.map(row => row.url);
+    const urls: string[] = speakerUrls.rows.map(row => row.url);
     const sessions = await findSpeakerSessions(speakerId);
 
     return {
-        id : speakerInfo.rows[0].id,
-        fullName : speakerInfo.rows[0].full_name,
+        id: speakerInfo.rows[0].id,
+        fullName: speakerInfo.rows[0].full_name,
         profilePicture: speakerInfo.rows[0].profile_picture_url,
         bio: speakerInfo.rows[0].biography,
-        socialLinks : urls,
-        sessions : sessions
+        socialLinks: urls,
+        sessions: sessions
     }
 
 }
 
-export const updateSpeaker = async(
-    speakerId : string,
-    updateData : SpeakerUpdate
-) : Promise<Speaker> => {
+export const updateSpeaker = async (
+    speakerId: string,
+    updateData: SpeakerUpdate
+): Promise<Speaker> => {
 
     const setClauses: string[] = [];
     const params: string[] = [];
@@ -161,24 +161,35 @@ export const updateSpeaker = async(
         setClauses.push(`profile_picture_url = $${params.length}`);
     }
 
-    if (setClauses.length === 0) {
-        throw new AppError("No fields to update", 400);
+    if (setClauses.length > 0) {
+        params.push(speakerId);
+        const query = `UPDATE speaker SET ${setClauses.join(", ")} WHERE id = $${params.length}`;
+        await pool.query(query, params);
     }
 
-    params.push(speakerId);
-    const query = `UPDATE speaker SET ${setClauses.join(", ")} WHERE id = $${params.length}`;
+    if (updateData.socialLinks) {
+        await pool.query(
+            `DELETE FROM link WHERE id_speaker = $1`,
+            [speakerId]
+        );
 
-    await pool.query(query, params);
+        for (const link of updateData.socialLinks) {
+            await pool.query(
+                `INSERT INTO link (url, id_speaker) VALUES ($1, $2)`,
+                [link, speakerId]
+            );
+        }
+    }
 
     return await findSpeakerById(speakerId);
 
 }
 
-export const findAllSpeaker = async(
+export const findAllSpeaker = async (
     range?: number[],
     filter?: SpeakerFiltering,
     sort?: string[]
-) : Promise<SpeakerPagination> => {
+): Promise<SpeakerPagination> => {
     const conditions: string[] = [];
     const values: any[] = [];
 
@@ -197,7 +208,7 @@ export const findAllSpeaker = async(
         query += ` order by ${toSnakeCase(sort[0])} ${sort[1]}`;
     }
 
-    const {rows} = await pool.query(query, values);
+    const { rows } = await pool.query(query, values);
 
     const toFind = range?.length ? rows.slice(range[0], range[1] + 1) : rows;
 
@@ -206,33 +217,33 @@ export const findAllSpeaker = async(
         speakers.push(await findSpeakerById(row.id));
     }
 
-    return {speakers, total: rows.length};
+    return { speakers, total: rows.length };
 }
 
-export const createSpeaker = async(
-    speaker : SpeakerCreation
-) : Promise<Speaker> => {
+export const createSpeaker = async (
+    speaker: SpeakerCreation
+): Promise<Speaker> => {
 
     const creatingSpeakerInfo = await pool.query(
         `INSERT INTO speaker (full_name, profile_picture_url, biography)
         VALUES ($1, $2, $3)
         RETURNING id`, [
-            speaker.fullName,
-            speaker.profilePicture ?? '',
-            speaker.bio ?? ''
-        ]
+        speaker.fullName,
+        speaker.profilePicture ?? '',
+        speaker.bio ?? ''
+    ]
     );
 
-    if(speaker.socialLinks ) {
+    if (speaker.socialLinks) {
         for (const link of speaker.socialLinks) {
             await pool.query(
                 `
                 INSERT INTO link (url, id_speaker)
                 VALUES ($1, $2)
-                ` ,[
-                    link,
-                    creatingSpeakerInfo.rows[0].id
-                ]
+                ` , [
+                link,
+                creatingSpeakerInfo.rows[0].id
+            ]
             )
         }
     }
@@ -240,11 +251,11 @@ export const createSpeaker = async(
     return await findSpeakerById(creatingSpeakerInfo.rows[0].id);
 }
 
-export const associateSpeakerToSession = async(
+export const associateSpeakerToSession = async (
     sessionId: string,
     speakerId: string,
     eventId: string
-) : Promise<void> => {
+): Promise<void> => {
     await findSessionById(sessionId, eventId);
 
     const speakerResult = await pool.query(
@@ -277,11 +288,11 @@ export const associateSpeakerToSession = async(
     );
 };
 
-export const dissociateSpeakerFromSession = async(
+export const dissociateSpeakerFromSession = async (
     sessionId: string,
     speakerId: string,
     eventId: string
-) : Promise<void> => {
+): Promise<void> => {
     await findSessionById(sessionId, eventId);
 
     const speakerResult = await pool.query(
@@ -314,12 +325,12 @@ export const dissociateSpeakerFromSession = async(
     );
 };
 
-export const deleteSpeaker = async(
-    speakerId : string
-) : Promise<void> => {
-    
+export const deleteSpeaker = async (
+    speakerId: string
+): Promise<void> => {
+
     await Promise.all([
-        
+
         await pool.query(
             `DELETE FROM session_speaker WHERE id_speaker = $1`,
             [speakerId]

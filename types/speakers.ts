@@ -16,6 +16,7 @@ export interface SpeakerUpdate {
     fullName ?: string,
     profilePicture ?: string,
     bio ?: string,
+    socialLinks ?: string[]
 };
 
 export interface SpeakerFiltering {

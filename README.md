@@ -1,55 +1,186 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EventSync
+
+> A real-time event management and attendee engagement platform.
+
+EventSync replaces static event materials (PDFs, printed programs) with a dynamic web experience for navigating events and interacting with sessions as they happen.
+
+<p align="center">
+  <img src="./screenshots/home.png" alt="EventSync homepage" width="800"/>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Frontend-Next.js-000000?logo=nextdotjs" alt="Next.js Frontend"/>
+  <img src="https://img.shields.io/badge/Backend-Next.js-000000?logo=nextdotjs" alt="Next.js Backend"/>
+  <img src="https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript" alt="TypeScript"/>
+  <img src="https://img.shields.io/badge/Styling-TailwindCSS-38BDF8?logo=tailwindcss" alt="Tailwind CSS"/>
+</p>
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Application visuals](#application-visuals)
+- [User Roles](#user-roles)
+- [Features](#features)
+- [Getting Started](#getting-started)
+
+---
+
+## Overview
+
+EventSync is built for three audiences:
+
+- **Organizers**, who manage events, sessions, rooms, and speakers from an authenticated admin space.
+- **Attendees**, who browse events publicly, follow the live schedule, and interact with ongoing sessions.
+- **Speakers**, who get an automatically generated public profile page showcasing their sessions and the questions asked during them.
+
+The platform's centerpiece is a **live Q&A system**: while a session is in progress, attendees can submit questions and upvote existing ones, all sorted in real time by popularity.
+
+## Tech Stack
+
+| Layer      | Technology              |
+|------------|-------------------------|
+| Frontend   | Next.js, TypeScript     |
+| Backend    | Next.js (API Routes)    |
+| Styling    | Tailwind CSS            |
+| Storage    | Browser local storage (favorites, upvotes) |
+
+## Application visuals
+
+> Here are some overview of our application
+
+### Event Page
+
+<p align="center">
+  <img src="./screenshots/event-page.png" alt="Event detail page" width="800"/>
+</p>
+
+### Multi-Track Schedule
+
+<p align="center">
+  <img src="./screenshots/schedule.png" alt="Multi-track schedule view" width="800"/>
+</p>
+
+### Session Detail & Live Q&A
+
+<p align="center">
+  <img src="./screenshots/session-detail.png" alt="Session detail with live Q&A" width="800"/>
+</p>
+
+### Speaker Page
+
+<p align="center">
+  <img src="./screenshots/speaker-page.png" alt="Speaker public page" width="800"/>
+</p>
+<p align="center">
+  <img src="./screenshots/speaker-page.png" alt="Speaker public page" width="800"/>
+</p>
+
+## User Roles
+
+### 🛠️ Organizer (Admin)
+
+Secured access via authentication.
+
+- Create, edit, and delete events
+- Manage sessions (creation, editing)
+- Assign speakers to sessions
+- Define rooms and time slots
+- Manage speaker profiles
+
+### 👥 Attendee (Public Access)
+
+Open access, no authentication required.
+
+- Browse events
+- View the full schedule
+- Identify sessions currently live
+- Access session details
+- Ask questions during a live session
+- Upvote questions
+- Bookmark sessions as favorites
+
+### 🎤 Speaker
+
+No dedicated authentication system.
+
+- Access their public page
+- View the sessions they're part of
+- See the questions asked on their sessions
+
+## Features
+
+### 📌 Event Page
+
+Public page displaying an event's title, description, dates, and session list, with currently live sessions highlighted.
+
+### 🗓️ Multi-Track Schedule (Global View)
+
+Sessions displayed as a time-based grid:
+
+- Organized by time slot
+- Simultaneous sessions shown side by side, grouped by room
+- Each entry shows title, time, room, and speakers
+- Actions: open session detail, add session to favorites
+
+### 🔴 Live Session Detection
+
+A session is automatically flagged as **live** when the current time falls between its start and end time. The "Live" badge appears on the event page, the global schedule, and the per-room view.
+
+### 📄 Session Detail Page
+
+Displays title, description, time slot, room, capacity (informative), the list of speakers (linked to their pages), and the Q&A section.
+
+### 💬 Live Q&A System
+
+- **Visibility**: only available while the session is live; hidden before it starts
+- **Submission**: required text field, optional name field (anonymous allowed)
+- **Listing**: questions sorted by upvote count, descending
+- **Upvoting**: attendees can upvote existing questions; each upvote increments a counter
+
+### 🎤 Speaker Pages
+
+Automatically generated, publicly accessible pages showing profile picture, name, bio, external links, and the speaker's associated sessions.
+
+### 🏛️ Room Schedule View
+
+Chronological list of sessions for a given room, showing time, title, speakers, and the "Live" badge when applicable.
+
+### ⭐ Favorites (Personal Itinerary)
+
+Attendees can build a personal session selection:
+
+- Add a session to favorites
+- Remove a session from favorites
+- View the full favorites list
+
+Favorites are stored client-side, in the browser.
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Clone the repository
+git clone https://github.com/<your-username>/eventsync.git
+cd eventsync
+
+# Install dependencies
+npm install
+
+# Run the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app will be available at `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-### How to use GITHUB Oauth and Google Oauth2 ?
-
-Just add a new content for .env file like on .env.example such as :
-
-```
-JWT_ACCESS_SECRET=8f4a2c9e7d1b5f3a6c8e0d2f9a1b7c4e
-JWT_REFRESH_SECRET=3c7f1a9d5e8b2f6a4d0c1e7f9b3a5d8e
-
-GITHUB_CLIENT_ID=Ov23ct5hch6mGvEDh6cf
-GITHUB_CLIENT_SECRET=e73482b3b0c752925f5e37d5f9989153c1ba072a
-GITHUB_REDIRECT_URI=http://localhost:3000/api/auth/github/callback
-
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
+```env
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+DATABASE_URL=
 ```
 
-Don't forget the jwt token !!!
+---
+
+<p align="center">Built with Next.js, TypeScript, and Tailwind CSS.</p>
