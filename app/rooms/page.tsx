@@ -23,7 +23,8 @@ export default async function RoomsPage() {
             <div className="absolute top-0 right-1/4 w-[600px] h-[500px] bg-primary/4 rounded-full blur-[150px] pointer-events-none" />
             <div className="absolute bottom-1/4 left-1/4 w-[500px] h-[400px] bg-accent/4 rounded-full blur-[130px] pointer-events-none" />
 
-            <div className="max-w-5xl mx-auto relative z-10 text-left">
+            <div className="mmoins un intervenant
+Une question :ax-w-5xl mx-auto relative z-10 text-left">
 
                 <div className="mb-12 flex flex-col items-start gap-2 max-w-xl">
                     <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-primary bg-primary/20 border border-primary/20 px-3 py-0.5 rounded-full shadow-sm">
@@ -33,7 +34,7 @@ export default async function RoomsPage() {
                     <h1 className="font-[family-name:var(--font-syne)] text-3xl md:text-4xl font-extrabold tracking-tight gradient-brand-text mt-1">
                         Campus Rooms
                     </h1>
-                    <p className="text-sm text-muted-foreground/90 leading-relaxed">
+                    <p className="text-sm text-white/60 leading-relaxed">
                         Explore specific presentation halls, physical laboratories, and specialized conference spaces hosting upcoming keynotes.
                     </p>
                 </div>

@@ -39,7 +39,7 @@ export async function SessionSection() {
                         <span className="text-xs font-bold uppercase tracking-widest text-primary mb-1 block">
                             View our planning
                         </span>
-                        <h2 className="section-atitle text-2xl md:text-3xl font-extrabold tracking-tight">
+                        <h2 className="section-title text-2xl md:text-3xl font-extrabold tracking-tight">
                             Recent sessions
                         </h2>
                     </div>
